@@ -42,7 +42,18 @@ export async function fetchGoals(): Promise<Goal[]> {
 export async function createGoal(goal: Omit<Goal, "id">): Promise<void> {
     const col = getGoalsCollection();
     const ref = doc(col);
-    await setDoc(ref, { ...goal, id: ref.id });
+
+    const now = new Date();
+    const payload = {
+        ...goal,
+        id: ref.id,
+        createdAt: now.toISOString(),
+        startDate: goal.startDate ?? now.toISOString(),
+        updatedAt: now.toISOString(),
+        status: "active",
+    };
+
+    await setDoc(ref, payload);
 }
 
 /**

@@ -18,4 +18,5 @@ export interface DashboardSale {
     date: string;
     farmName: string;
     category: string;
+    id: string;
 }

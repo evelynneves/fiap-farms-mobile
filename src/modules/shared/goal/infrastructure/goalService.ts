@@ -79,10 +79,6 @@ export async function updateGoalFirestore(goal: Goal): Promise<void> {
     await updateDoc(ref, { ...goal, updatedAt: new Date().toISOString() });
 }
 
-/* -------------------------------------------------------------------------- */
-/* Subscrições em tempo real (onSnapshot)                                     */
-/* -------------------------------------------------------------------------- */
-
 /**
  * Escuta alterações em tempo real nos itens do usuário.
  */

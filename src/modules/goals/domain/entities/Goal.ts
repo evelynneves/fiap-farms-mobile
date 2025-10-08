@@ -13,4 +13,7 @@ export interface Goal {
     deadline: string;
     status: GoalStatus;
     description?: string;
+    createdAt?: string;
+    startDate?: string;
+    updatedAt?: string;
 }

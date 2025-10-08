@@ -8,6 +8,10 @@
  *                                                                             *
  ******************************************************************************/
 
+import {
+    addNotification,
+    getFreshNotificationsConfig,
+} from "@/src/modules/inventory/infrastructure/services/notificationService";
 import { calcTotalQuantity, calcTotalRevenue } from "@/src/modules/sales/application/usecases/calcTotals";
 import { Goal } from "@/src/modules/sales/domain/entities/Goal";
 import { Item } from "@/src/modules/sales/domain/entities/Item";
@@ -25,10 +29,11 @@ import type { Item as SharedItem } from "@/src/modules/shared/goal/domain/entiti
 import type { Sale as SharedSale } from "@/src/modules/shared/goal/domain/entities/Sale";
 import { subscribeGoals, subscribeItems, subscribeSales } from "@/src/modules/shared/goal/infrastructure/goalService";
 import { Plus } from "lucide-react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 type SaleWithGoalFlag = Sale & { hasRelatedGoal?: boolean };
+type NotifConfig = { stock: boolean; goals: boolean };
 
 export default function SalesScreen() {
     const [products, setProducts] = useState<Item[]>([]);
@@ -39,8 +44,24 @@ export default function SalesScreen() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingSale, setEditingSale] = useState<Sale | null>(null);
 
+    const notifCfgRef = useRef<NotifConfig>({ stock: true, goals: true });
+
     const totalRevenue = calcTotalRevenue(sales);
     const totalQty = calcTotalQuantity(sales);
+
+    useEffect(() => {
+        (async () => {
+            try {
+                const cfg = await getFreshNotificationsConfig();
+                notifCfgRef.current = {
+                    stock: cfg?.stock ?? true,
+                    goals: cfg?.goals ?? true,
+                };
+            } catch {
+                notifCfgRef.current = { stock: true, goals: true };
+            }
+        })();
+    }, []);
 
     useEffect(() => {
         const unsubGoals = subscribeGoals(setGoals);
@@ -49,7 +70,15 @@ export default function SalesScreen() {
 
     useEffect(() => {
         const unsubItems = subscribeItems((sharedItems: SharedItem[]) => {
-            setProducts(sharedItems.map((i) => ({ ...i })) as Item[]);
+            const mapped = sharedItems.map((i) => ({
+                id: i.id,
+                name: i.name,
+                farmName: (i as any).farm ?? "",
+                quantity: i.quantity ?? 0,
+                unit: (i as any).unit ?? "un",
+                lastUpdated: i.lastUpdated ?? new Date().toISOString(),
+            })) as unknown as Item[];
+            setProducts(mapped);
         });
         return () => unsubItems?.();
     }, []);
@@ -65,24 +94,33 @@ export default function SalesScreen() {
                 salePrice: sale.salePrice,
                 totalValue: sale.totalValue,
                 date: sale.date,
-                hasRelatedGoal: goals.some((g) => g.productId === sale.productId),
             }));
             setSales(mappedSales);
             setLoading(false);
         });
-
         return () => unsubSales?.();
+    }, []);
+
+    useEffect(() => {
+        setSales((prev) =>
+            prev.map((s) => ({
+                ...s,
+                hasRelatedGoal: goals.some((g) => g.productId === s.productId),
+            }))
+        );
     }, [goals]);
 
     const handleSaveSale = async (sale: Sale, isEdit: boolean) => {
         try {
+            let persisted: SaleWithGoalFlag;
+
             if (isEdit) {
                 const updated = await updateSaleInStorage(sale.id, sale);
-                const updatedWithFlag = {
+                persisted = {
                     ...updated,
                     hasRelatedGoal: goals.some((g) => g.productId === updated.productId),
                 };
-                setSales((prev) => prev.map((s) => (s.id === updated.id ? updatedWithFlag : s)));
+                setSales((prev) => prev.map((s) => (s.id === sale.id ? persisted : s)));
             } else {
                 const added = await addSaleToStorage({
                     productId: sale.productId,
@@ -92,12 +130,41 @@ export default function SalesScreen() {
                     salePrice: sale.salePrice,
                     date: sale.date,
                 });
-                const addedWithFlag = {
+                persisted = {
                     ...added,
                     hasRelatedGoal: goals.some((g) => g.productId === added.productId),
                 };
-                setSales((prev) => [...prev, addedWithFlag]);
+                setSales((prev) => [...prev, persisted]);
             }
+
+            const cfg = await getFreshNotificationsConfig();
+
+            if (cfg.goals) {
+                const relatedGoal = goals.find((g) => g.productId === persisted.productId);
+
+                if (relatedGoal) {
+                    const newProgress = relatedGoal.current + persisted.quantity;
+                    const isCompleted = newProgress >= relatedGoal.target;
+
+                    const updatedGoal = {
+                        ...relatedGoal,
+                        current: newProgress,
+                        status: isCompleted ? "completed" : "active",
+                        updatedAt: new Date().toISOString(),
+                    };
+                    await updateSaleInStorage(relatedGoal.id, updatedGoal as any);
+
+                    await addNotification({
+                        type: "success",
+                        category: "goals",
+                        title: isCompleted ? "Meta Atingida!" : "Venda vinculada à meta",
+                        message: isCompleted
+                            ? `${relatedGoal.title} foi concluída com sucesso (${newProgress}/${relatedGoal.target} ${relatedGoal.unit}).`
+                            : `A venda de ${persisted.productName} ajudou no progresso da meta "${relatedGoal.title}" (${newProgress}/${relatedGoal.target} ${relatedGoal.unit}).`,
+                    });
+                }
+            }
+
             setError("");
         } catch (e: any) {
             setError(e?.message ?? "Erro ao salvar venda.");

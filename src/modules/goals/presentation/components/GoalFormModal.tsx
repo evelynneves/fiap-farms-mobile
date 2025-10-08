@@ -1,3 +1,14 @@
+/******************************************************************************
+ *                                                                             *
+ * Creation Date : 06/10/2025                                                  *
+ *                                                                             *
+ * Property : (c) This program, code or item is the Intellectual Property of   *
+ * Evelyn Neves Barreto. Any use or copy of this code is prohibited without    *
+ * the express written authorization of Evelyn. All rights reserved.           *
+ *                                                                             *
+ ******************************************************************************/
+
+import DateTimePicker from "@react-native-community/datetimepicker";
 import React, { useEffect, useMemo, useState } from "react";
 import {
     FlatList,
@@ -34,12 +45,37 @@ export function GoalFormModal({ isOpen, onClose, onSave, editingGoal, products, 
     const [productId, setProductId] = useState("");
     const [target, setTarget] = useState("");
     const [unit, setUnit] = useState("");
+    const [startDate, setStartDate] = useState("");
     const [deadline, setDeadline] = useState("");
     const [description, setDescription] = useState("");
     const [formError, setFormError] = useState("");
 
     const [pickTypeOpen, setPickTypeOpen] = useState(false);
     const [pickProductOpen, setPickProductOpen] = useState(false);
+    const [showStartPicker, setShowStartPicker] = useState(false);
+    const [showDeadlinePicker, setShowDeadlinePicker] = useState(false);
+    const [pickerStartDate, setPickerStartDate] = useState<Date>(new Date());
+    const [pickerDeadline, setPickerDeadline] = useState<Date>(new Date());
+
+    const toISO = (d: Date) =>
+        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+    const openStartPicker = () => setShowStartPicker(true);
+    const openDeadlinePicker = () => setShowDeadlinePicker(true);
+
+    const onStartDateChange = (_: any, date?: Date) => {
+        if (Platform.OS !== "ios") setShowStartPicker(false);
+        if (!date) return;
+        setPickerStartDate(date);
+        setStartDate(toISO(date));
+    };
+
+    const onDeadlineChange = (_: any, date?: Date) => {
+        if (Platform.OS !== "ios") setShowDeadlinePicker(false);
+        if (!date) return;
+        setPickerDeadline(date);
+        setDeadline(toISO(date));
+    };
 
     useEffect(() => {
         if (editingGoal) {
@@ -48,6 +84,7 @@ export function GoalFormModal({ isOpen, onClose, onSave, editingGoal, products, 
             setProductId(editingGoal.productId || "");
             setTarget(String(editingGoal.target));
             setUnit(editingGoal.unit);
+            setStartDate(editingGoal.startDate ?? "");
             setDeadline(editingGoal.deadline);
             setDescription(editingGoal.description ?? "");
             setFormError("");
@@ -80,13 +117,14 @@ export function GoalFormModal({ isOpen, onClose, onSave, editingGoal, products, 
         setProductId("");
         setTarget("");
         setUnit("");
+        setStartDate("");
         setDeadline("");
         setDescription("");
         setFormError("");
     }
 
     function handleSubmit() {
-        if (!title || !type || !productId || !target || !unit || !deadline) {
+        if (!title || !type || !productId || !target || !unit || !deadline || !startDate) {
             setFormError("Preencha todos os campos obrigatórios.");
             return;
         }
@@ -109,9 +147,12 @@ export function GoalFormModal({ isOpen, onClose, onSave, editingGoal, products, 
             target: Number(target),
             current: editingGoal ? editingGoal.current : 0,
             unit,
+            startDate,
             deadline,
             status: editingGoal ? editingGoal.status : "active",
             description: description.trim(),
+            createdAt: editingGoal ? editingGoal.createdAt : new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
         };
 
         onSave(newGoal, !!editingGoal);
@@ -194,13 +235,39 @@ export function GoalFormModal({ isOpen, onClose, onSave, editingGoal, products, 
                     </View>
 
                     <View style={styles.field}>
+                        <Text style={styles.label}>Início da Meta *</Text>
+                        <Pressable onPress={openStartPicker} style={styles.input}>
+                            <Text style={{ color: startDate ? "#111827" : "#9CA3AF" }}>
+                                {startDate || "Selecionar data"}
+                            </Text>
+                        </Pressable>
+
+                        {showStartPicker && (
+                            <DateTimePicker
+                                value={pickerStartDate}
+                                mode="date"
+                                display={Platform.OS === "ios" ? "inline" : "default"}
+                                onChange={onStartDateChange}
+                            />
+                        )}
+                    </View>
+
+                    <View style={styles.field}>
                         <Text style={styles.label}>Prazo *</Text>
-                        <TextInput
-                            placeholder="YYYY-MM-DD"
-                            value={deadline}
-                            onChangeText={setDeadline}
-                            style={styles.input}
-                        />
+                        <Pressable onPress={openDeadlinePicker} style={styles.input}>
+                            <Text style={{ color: deadline ? "#111827" : "#9CA3AF" }}>
+                                {deadline || "Selecionar data"}
+                            </Text>
+                        </Pressable>
+
+                        {showDeadlinePicker && (
+                            <DateTimePicker
+                                value={pickerDeadline}
+                                mode="date"
+                                display={Platform.OS === "ios" ? "inline" : "default"}
+                                onChange={onDeadlineChange}
+                            />
+                        )}
                     </View>
 
                     <View style={styles.field}>
@@ -286,6 +353,7 @@ const styles = StyleSheet.create({
         width: "100%",
         maxWidth: 520,
         position: "relative",
+        gap: 15,
     },
     header: { marginBottom: 12 },
     headerTitle: { fontSize: 20, fontWeight: "700", color: "#111827" },
@@ -293,8 +361,8 @@ const styles = StyleSheet.create({
     closeBtn: { position: "absolute", right: 12, top: 12, padding: 4 },
     closeTxt: { fontSize: 20, color: "#111827" },
 
-    field: { marginBottom: 10 },
-    label: { fontSize: 14, color: "#374151", fontWeight: "600", marginBottom: 4 },
+    field: { gap: 6 },
+    label: { fontSize: 13, color: "#374151", fontWeight: "500" },
     input: {
         height: 44,
         borderWidth: 1,
@@ -302,6 +370,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         paddingHorizontal: 12,
         backgroundColor: "#FFF",
+        justifyContent: "center",
     },
     inputDisabled: { backgroundColor: "#F3F4F6", color: "#6B7280" },
 

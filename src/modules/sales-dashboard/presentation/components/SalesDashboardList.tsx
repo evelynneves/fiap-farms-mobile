@@ -1,7 +1,7 @@
 import React from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 
-type Row = { product: string; revenue: number; profit: number; units: number };
+type Row = { product: string; revenue: number; profit: number; units: number; id: string };
 type Props = { salesData: Row[] };
 
 const currency = (v: number) =>
@@ -40,7 +40,7 @@ export default function SalesDashboardList({ salesData }: Props) {
 
             <FlatList
                 data={salesData}
-                keyExtractor={(i) => i.product}
+                keyExtractor={(item, index) => item.id ?? `${item.product}-${index}`}
                 renderItem={renderItem}
                 scrollEnabled={false}
                 ItemSeparatorComponent={() => <View style={styles.sep} />}

@@ -68,12 +68,6 @@ export async function getDashboardStats(): Promise<DashboardStat[]> {
                 positive: true,
             },
             {
-                title: "Produção Ativa",
-                value: `${activeProduction} ton`,
-                change: "+0%", // TODO: cálculo real
-                positive: true,
-            },
-            {
                 title: "Fazendas Ativas",
                 value: farmsCount.toString(),
                 change: "+0%",

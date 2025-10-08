@@ -222,14 +222,14 @@ export default function LoggedLayout() {
                         };
                     }}
                 >
-                    <Drawer.Screen name="home" options={{ title: "Início" }} />
-                    <Drawer.Screen name="registrations" options={{ title: "Cadastros" }} />
-                    <Drawer.Screen name="inventory" options={{ title: "Estoque" }} />
-                    <Drawer.Screen name="sales" options={{ title: "Vendas" }} />
-                    <Drawer.Screen name="production-dashboard" options={{ title: "Dashboard de Produção" }} />
-                    <Drawer.Screen name="sales-dashboard" options={{ title: "Dashboard de Vendas" }} />
-                    <Drawer.Screen name="goals" options={{ title: "Metas" }} />
-                    <Drawer.Screen name="settings" options={{ title: "Configurações" }} />
+                    <Drawer.Screen name="home/index" options={{ title: "Início" }} />
+                    <Drawer.Screen name="registrations/index" options={{ title: "Cadastros" }} />
+                    <Drawer.Screen name="inventory/index" options={{ title: "Estoque" }} />
+                    <Drawer.Screen name="sales/index" options={{ title: "Vendas" }} />
+                    <Drawer.Screen name="production-dashboard/index" options={{ title: "Dashboard de Produção" }} />
+                    <Drawer.Screen name="sales-dashboard/index" options={{ title: "Dashboard de Vendas" }} />
+                    <Drawer.Screen name="goals/index" options={{ title: "Metas" }} />
+                    <Drawer.Screen name="settings/index" options={{ title: "Configurações" }} />
                 </Drawer>
             </SafeAreaView>
         </GestureHandlerRootView>

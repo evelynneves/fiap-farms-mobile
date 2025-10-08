@@ -21,7 +21,7 @@ import { recalculateGoalsProgress } from "@/src/modules/shared/goal";
 import type { Item as SharedItem } from "@/src/modules/shared/goal/domain/entities/Item";
 import { subscribeGoals, subscribeItems, subscribeSales } from "@/src/modules/shared/goal/infrastructure/goalService";
 import { Plus } from "lucide-react-native";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function GoalsScreen() {
@@ -36,6 +36,17 @@ export default function GoalsScreen() {
 
     const typeLabels: Record<"sales" | "production", string> = { sales: "Vendas", production: "Produção" };
     const isValidUnit = (u: any): u is Item["unit"] => ["kg", "g", "un", "L", "m"].includes(u);
+
+    const salesRef = useRef<any[]>([]);
+    const productsRef = useRef<Item[]>([]);
+
+    useEffect(() => {
+        salesRef.current = sales;
+    }, [sales]);
+
+    useEffect(() => {
+        productsRef.current = products;
+    }, [products]);
 
     const mapSharedToGoalsItem = (it: SharedItem): GoalsItem => ({
         id: it.id,
@@ -60,8 +71,8 @@ export default function GoalsScreen() {
         const unsubGoals = subscribeGoals(async (goalsSnap) => {
             try {
                 const recalculated = await recalculateGoalsProgress(goalsSnap, {
-                    getSales: async () => sales,
-                    getItems: async () => products,
+                    getSales: async () => salesRef.current,
+                    getItems: async () => productsRef.current,
                 });
                 setGoals(recalculated);
             } catch (e: any) {
@@ -72,13 +83,13 @@ export default function GoalsScreen() {
         setLoading(false);
 
         return () => {
-            unsubItems();
-            unsubSales();
-            unsubGoals();
+            unsubItems?.();
+            unsubSales?.();
+            unsubGoals?.();
         };
-    }, [products, sales]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
-    /** 🚀 Inicia as subscrições */
     useEffect(() => {
         const unsub = subscribeData();
         return () => unsub?.();
@@ -102,8 +113,8 @@ export default function GoalsScreen() {
 
             const fresh = await fetchGoals();
             const recalculated = await recalculateGoalsProgress(fresh, {
-                getSales: async () => sales,
-                getItems: async () => products,
+                getSales: async () => salesRef.current,
+                getItems: async () => productsRef.current,
             });
             setGoals(recalculated);
 

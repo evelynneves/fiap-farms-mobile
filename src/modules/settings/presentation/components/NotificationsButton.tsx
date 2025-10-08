@@ -1,3 +1,6 @@
+import { db } from "@/src/modules/shared/infrastructure/firebase";
+import { auth } from "@/src/modules/shared/infrastructure/firebase/firebaseConfig";
+import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import { Bell } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import { FlatList, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -6,21 +9,43 @@ import {
     markAllNotificationsAsRead,
     markNotificationAsRead,
 } from "../../infrastructure/services/notificationsService";
-import {
-    getUserNotifications,
-    setUserNotifications,
-    type UserNotification,
-} from "../../infrastructure/services/userNotificationsService";
+import { setUserNotifications, type UserNotification } from "../../infrastructure/services/userNotificationsService";
 
 export default function NotificationsButton() {
     const [open, setOpen] = useState(false);
     const [list, setList] = useState<UserNotification[]>([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        (async () => {
-            const data = (await getUserNotifications()) as UserNotification[];
-            setList(data);
-        })();
+        let unsubscribe: (() => void) | undefined;
+
+        const setupListener = async () => {
+            const user = auth.currentUser;
+            if (!user) {
+                setList([]);
+                setLoading(false);
+                return;
+            }
+
+            const ref = collection(db, `users/${user.uid}/notifications`);
+            const q = query(ref, orderBy("timestamp", "desc"));
+
+            unsubscribe = onSnapshot(q, (snap) => {
+                const notifications = snap.docs.map((doc) => ({
+                    id: doc.id,
+                    ...(doc.data() as Omit<UserNotification, "id">),
+                })) as UserNotification[];
+
+                setList(notifications);
+                setLoading(false);
+            });
+        };
+
+        setupListener();
+
+        return () => {
+            if (unsubscribe) unsubscribe();
+        };
     }, []);
 
     const unread = list.filter((n) => !n.read).length;
@@ -52,7 +77,14 @@ export default function NotificationsButton() {
         info: styles.infoItem,
     };
 
-    const fmtDate = (ts: string | undefined) => (ts ? new Date(ts).toLocaleString("pt-BR") : "");
+    const fmtDate = (ts: any) => {
+        if (!ts) return "";
+        if (typeof ts.toDate === "function") {
+            return ts.toDate().toLocaleString("pt-BR");
+        }
+        const date = new Date(ts);
+        return isNaN(date.getTime()) ? "" : date.toLocaleString("pt-BR");
+    };
 
     return (
         <View style={{ position: "relative" }}>
@@ -70,16 +102,19 @@ export default function NotificationsButton() {
                     <View style={styles.dropdown}>
                         <View style={styles.header}>
                             <Text style={styles.headerTitle}>Notificações</Text>
-                            <TouchableOpacity onPress={onMarkAll}>
-                                <Text style={styles.markAll}>Marcar todas como lidas</Text>
-                            </TouchableOpacity>
+
+                            {list.length > 0 && unread > 0 && (
+                                <TouchableOpacity onPress={onMarkAll}>
+                                    <Text style={styles.markAll}>Marcar todas como lidas</Text>
+                                </TouchableOpacity>
+                            )}
                         </View>
 
                         <FlatList
                             data={list}
                             keyExtractor={(it) => it.id}
                             style={{ maxHeight: 360 }}
-                            ListEmptyComponent={<Text style={styles.empty}>Sem notificações</Text>}
+                            ListEmptyComponent={<Text style={styles.empty}>Nenhuma notificação</Text>}
                             renderItem={({ item }) => (
                                 <TouchableOpacity
                                     onPress={() => onMarkOne(item.id)}

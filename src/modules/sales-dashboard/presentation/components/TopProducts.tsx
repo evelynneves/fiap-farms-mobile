@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 
-type Row = { product: string; revenue: number; profit: number; growth: number; units: number };
+type Row = { product: string; revenue: number; profit: number; growth: number; units: number; id: string };
 type Props = { salesData: Row[] };
 
 const currency = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
@@ -19,7 +19,7 @@ export default function TopProducts({ salesData }: Props) {
             <FlatList
                 data={topProducts}
                 scrollEnabled={false}
-                keyExtractor={(i) => i.product}
+                keyExtractor={(item, index) => item.id ?? `${item.product}-${index}`}
                 ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
                 renderItem={({ item, index }) => (
                     <View style={styles.item}>

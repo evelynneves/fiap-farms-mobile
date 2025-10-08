@@ -18,9 +18,11 @@ import { SummaryCards } from "@/src/modules/inventory/presentation/components/Su
 import { getStockStatus } from "@/src/modules/inventory/utils/getStockStatus";
 import { Goal, Sale } from "@/src/modules/shared/goal";
 import { subscribeGoals, subscribeItems, subscribeSales } from "@/src/modules/shared/goal/infrastructure/goalService";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Item } from "../../domain/entities/Item";
+
+type NotifConfig = { stock: boolean; goals: boolean };
 
 export default function InventoryScreen() {
     const [categories, setCategories] = useState<string[]>([]);
@@ -35,15 +37,33 @@ export default function InventoryScreen() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<Item | null>(null);
 
+    const salesRef = useRef<Sale[]>([]);
+    const goalsRef = useRef<Goal[]>([]);
+    const notifCfgRef = useRef<NotifConfig>({ stock: true, goals: true });
+
     const units = ["kg", "ton", "sc", "un"];
 
-    const filteredItems = useMemo(
-        () => (selectedCategory === "all" ? items : items.filter((i) => i.category === selectedCategory)),
-        [items, selectedCategory]
-    );
+    useEffect(() => {
+        salesRef.current = sales;
+    }, [sales]);
 
-    const lowStockItems = items.filter((i) => getStockStatus(i).status === "low");
-    const totalValue = items.reduce((sum, i) => sum + i.quantity * i.costPrice, 0);
+    useEffect(() => {
+        goalsRef.current = goals;
+    }, [goals]);
+
+    useEffect(() => {
+        (async () => {
+            try {
+                const cfg = await getFreshNotificationsConfig();
+                notifCfgRef.current = {
+                    stock: cfg?.stock ?? true,
+                    goals: cfg?.goals ?? true,
+                };
+            } catch {
+                notifCfgRef.current = { stock: true, goals: true };
+            }
+        })();
+    }, []);
 
     useEffect(() => {
         let unsubCats: undefined | (() => void);
@@ -59,13 +79,16 @@ export default function InventoryScreen() {
             unsubSales = subscribeSales(setSales);
             unsubGoals = subscribeGoals(setGoals);
             unsubItems = subscribeItems((its) => {
-                setItems(
-                    its.map((item) => {
-                        const productSales = sales.filter((s) => s.productId === item.id);
-                        const hasRelatedGoal = goals.some((g) => g.productId === item.id);
-                        return { ...item, sales: productSales, hasRelatedGoal } as Item;
-                    })
-                );
+                const currentSales = salesRef.current;
+                const currentGoals = goalsRef.current;
+
+                const mapped = its.map((item) => {
+                    const productSales = currentSales.filter((s) => s.productId === item.id);
+                    const hasRelatedGoal = currentGoals.some((g) => g.productId === item.id);
+                    return { ...item, sales: productSales, hasRelatedGoal } as Item;
+                });
+
+                setItems(mapped);
             });
         } catch (e: any) {
             setError(e.message ?? "Erro ao assinar dados em tempo real");
@@ -80,35 +103,39 @@ export default function InventoryScreen() {
             unsubSales?.();
             unsubGoals?.();
         };
-    }, [sales, goals]);
+    }, []);
+
+    const filteredItems = useMemo(
+        () => (selectedCategory === "all" ? items : items.filter((i) => i.category === selectedCategory)),
+        [items, selectedCategory]
+    );
+
+    const lowStockItems = items.filter((i) => getStockStatus(i).status === "low");
+    const totalValue = items.reduce((sum, i) => sum + i.quantity * i.costPrice, 0);
 
     const handleSave = async (item: Item, isEdit: boolean) => {
         try {
+            let persisted: Item | undefined;
+
             if (isEdit) {
                 const updated = await updateItem(items, item);
                 setItems(updated);
-                if (getStockStatus(item).status === "low") {
-                    await addNotification({
-                        type: "warning",
-                        category: "stock",
-                        title: `Estoque Baixo - ${item.name}`,
-                        message: `O estoque de ${item.name} está abaixo do mínimo (${item.quantity}/${item.minStock})`,
-                    });
-                }
+                persisted = updated.find((i) => i.id === item.id);
             } else {
                 const added = await addItem(items, item);
                 setItems(added);
-
-                const config = await getFreshNotificationsConfig();
-                if (getStockStatus(item).status === "low" && config.stock) {
-                    await addNotification({
-                        type: "warning",
-                        category: "stock",
-                        title: `Estoque Baixo - ${item.name}`,
-                        message: `O estoque de ${item.name} está abaixo do mínimo (${item.quantity}/${item.minStock})`,
-                    });
-                }
+                persisted = added.find((i) => !items.some((old) => old.id === i.id)) ?? added[added.length - 1];
             }
+
+            if (persisted && getStockStatus(persisted).status === "low" && notifCfgRef.current.stock) {
+                await addNotification({
+                    type: "warning",
+                    category: "stock",
+                    title: `Estoque Baixo - ${persisted.name}`,
+                    message: `O estoque de ${persisted.name} está abaixo do mínimo (${persisted.quantity}/${persisted.minStock})`,
+                });
+            }
+
             setError("");
         } catch (e: any) {
             setError(e.message ?? "Erro ao salvar item");
