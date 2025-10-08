@@ -9,26 +9,30 @@
  ******************************************************************************/
 
 import { db } from "@/src/modules/shared/infrastructure/firebase";
+import { auth } from "@/src/modules/shared/infrastructure/firebase/firebaseConfig";
 import { addDoc, collection, deleteDoc, doc, getDoc, updateDoc } from "firebase/firestore";
 import { Item } from "../../domain/entities/Item";
 import { getStockStatus } from "../../utils/getStockStatus";
 
 /**
- * Adiciona um novo item no Firestore.
+ * Adiciona um novo item dentro de /users/{uid}/items.
  * Calcula o status de estoque e adiciona metadados de atualização.
- *
- * @param data Dados do item (sem o campo id)
- * @returns O item criado com o ID gerado pelo Firestore
  */
 export async function addItemInStorage(data: Omit<Item, "id">): Promise<Item> {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuário não autenticado.");
+
     try {
-        const docRef = await addDoc(collection(db, "items"), {
+        const colRef = collection(db, `users/${user.uid}/items`);
+        const status = getStockStatus(data).status;
+
+        const docRef = await addDoc(colRef, {
             ...data,
-            status: getStockStatus(data).status,
+            status,
             lastUpdated: new Date().toISOString(),
         });
 
-        return { id: docRef.id, ...data };
+        return { id: docRef.id, ...data, status };
     } catch (error) {
         console.error("Erro ao adicionar item no Firestore:", error);
         throw error;
@@ -36,24 +40,27 @@ export async function addItemInStorage(data: Omit<Item, "id">): Promise<Item> {
 }
 
 /**
- * Atualiza um item existente no Firestore.
+ * Atualiza um item existente em /users/{uid}/items/{itemId}.
  * Recalcula o status de estoque e retorna os dados atualizados.
- *
- * @param data Dados completos do item (com id)
- * @returns O item atualizado
  */
 export async function updateItemInStorage(data: Item): Promise<Item> {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuário não autenticado.");
     if (!data.id) throw new Error("ID inválido para atualização.");
 
     try {
-        const ref = doc(db, "items", data.id);
+        const ref = doc(db, `users/${user.uid}/items/${data.id}`);
+        const status = getStockStatus(data).status;
+
         await updateDoc(ref, {
             ...data,
-            status: getStockStatus(data).status,
+            status,
             lastUpdated: new Date().toISOString(),
         });
 
         const snap = await getDoc(ref);
+        if (!snap.exists()) throw new Error("Item não encontrado após atualização.");
+
         return { id: snap.id, ...(snap.data() as Omit<Item, "id">) };
     } catch (error) {
         console.error("Erro ao atualizar item:", error);
@@ -62,13 +69,15 @@ export async function updateItemInStorage(data: Item): Promise<Item> {
 }
 
 /**
- * Remove um item do Firestore.
- *
- * @param id ID do item a ser deletado
+ * Remove um item de /users/{uid}/items/{itemId}.
  */
 export async function deleteItemFromStorage(id: string): Promise<void> {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuário não autenticado.");
+    if (!id) throw new Error("ID do item ausente.");
+
     try {
-        const ref = doc(db, "items", id);
+        const ref = doc(db, `users/${user.uid}/items/${id}`);
         await deleteDoc(ref);
     } catch (error) {
         console.error("Erro ao excluir item:", error);

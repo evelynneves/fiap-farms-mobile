@@ -216,7 +216,6 @@ export function ItemFormModal({ isOpen, onClose, onSave, editingItem, categories
                 </View>
             </View>
 
-            {/* Picker simples */}
             <Modal visible={!!picker} transparent animationType="fade" onRequestClose={() => setPicker(null)}>
                 <View style={styles.pOverlay}>
                     <View style={styles.pContainer}>

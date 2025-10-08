@@ -139,7 +139,6 @@ export function GoalFormModal({ isOpen, onClose, onSave, editingGoal, products, 
 
                     {!!formError && <AlertMessage tone="error" message={formError} />}
 
-                    {/* Título */}
                     <View style={styles.field}>
                         <Text style={styles.label}>Título da Meta *</Text>
                         <TextInput
@@ -150,7 +149,6 @@ export function GoalFormModal({ isOpen, onClose, onSave, editingGoal, products, 
                         />
                     </View>
 
-                    {/* Tipo & Produto */}
                     <View style={styles.row}>
                         <View style={styles.col}>
                             <Text style={styles.label}>Tipo *</Text>
@@ -178,7 +176,6 @@ export function GoalFormModal({ isOpen, onClose, onSave, editingGoal, products, 
                         </View>
                     </View>
 
-                    {/* Meta & Unidade */}
                     <View style={styles.row}>
                         <View style={styles.col}>
                             <Text style={styles.label}>Meta *</Text>
@@ -196,7 +193,6 @@ export function GoalFormModal({ isOpen, onClose, onSave, editingGoal, products, 
                         </View>
                     </View>
 
-                    {/* Prazo (ISO yyyy-mm-dd) */}
                     <View style={styles.field}>
                         <Text style={styles.label}>Prazo *</Text>
                         <TextInput
@@ -207,7 +203,6 @@ export function GoalFormModal({ isOpen, onClose, onSave, editingGoal, products, 
                         />
                     </View>
 
-                    {/* Descrição */}
                     <View style={styles.field}>
                         <Text style={styles.label}>Descrição</Text>
                         <TextInput
@@ -218,7 +213,6 @@ export function GoalFormModal({ isOpen, onClose, onSave, editingGoal, products, 
                         />
                     </View>
 
-                    {/* Ações */}
                     <View style={styles.actions}>
                         <TouchableOpacity style={[styles.btn, styles.btnPrimary]} onPress={handleSubmit}>
                             <Text style={styles.btnPrimaryTxt}>{editingGoal ? "Atualizar" : "Criar Meta"}</Text>
@@ -230,7 +224,6 @@ export function GoalFormModal({ isOpen, onClose, onSave, editingGoal, products, 
                 </View>
             </View>
 
-            {/* Picker de Tipo */}
             <Modal visible={pickTypeOpen} transparent animationType="fade">
                 <Pressable style={styles.overlay} onPress={() => setPickTypeOpen(false)}>
                     <View style={styles.pickerSheet}>
@@ -250,7 +243,6 @@ export function GoalFormModal({ isOpen, onClose, onSave, editingGoal, products, 
                 </Pressable>
             </Modal>
 
-            {/* Picker de Produto */}
             <Modal visible={pickProductOpen} transparent animationType="fade">
                 <Pressable style={styles.overlay} onPress={() => setPickProductOpen(false)}>
                     <View style={[styles.pickerSheet, { maxHeight: "60%" }]}>

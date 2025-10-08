@@ -15,6 +15,7 @@ const TYPE_COLORS: Record<string, { bg: string; color: string }> = {
     Frutas: { bg: "#DBEAFE", color: "#1E3A8A" },
     Hortaliças: { bg: "#E0E7FF", color: "#3730A3" },
     Leguminosas: { bg: "#FCE7F3", color: "#9D174D" },
+    Outros: { bg: "#E0F2FE", color: "#075985" },
     default: { bg: "#F3F4F6", color: "#374151" },
 };
 

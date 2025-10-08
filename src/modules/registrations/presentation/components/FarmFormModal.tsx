@@ -1,3 +1,4 @@
+import { Picker } from "@react-native-picker/picker";
 import React, { useEffect, useState } from "react";
 import {
     KeyboardAvoidingView,
@@ -19,7 +20,7 @@ type Props = {
     editingFarm?: Farm | null;
 };
 
-const TYPES = ["Grãos", "Café", "Frutas", "Hortaliças", "Leguminosas"];
+const TYPES = ["Grãos", "Café", "Frutas", "Hortaliças", "Leguminosas", "Outros"];
 
 export function FarmFormModal({ isOpen, onClose, onSave, editingFarm }: Props) {
     const initial: Farm = { id: "", name: "", location: "", totalArea: 0, productionType: "", manager: "" };
@@ -27,6 +28,7 @@ export function FarmFormModal({ isOpen, onClose, onSave, editingFarm }: Props) {
 
     useEffect(() => {
         setForm(editingFarm ?? initial);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [editingFarm, isOpen]);
 
     const submit = () => {
@@ -62,6 +64,7 @@ export function FarmFormModal({ isOpen, onClose, onSave, editingFarm }: Props) {
                                     value={form.name}
                                     onChangeText={(v) => setForm({ ...form, name: v })}
                                     style={styles.input}
+                                    maxLength={40}
                                 />
                             </LabeledInput>
 
@@ -71,6 +74,7 @@ export function FarmFormModal({ isOpen, onClose, onSave, editingFarm }: Props) {
                                     value={form.location}
                                     onChangeText={(v) => setForm({ ...form, location: v })}
                                     style={styles.input}
+                                    maxLength={40}
                                 />
                             </LabeledInput>
 
@@ -86,21 +90,16 @@ export function FarmFormModal({ isOpen, onClose, onSave, editingFarm }: Props) {
 
                             <View style={{ gap: 8 }}>
                                 <Text style={styles.label}>Tipo de Produção *</Text>
-                                <View style={styles.chipsRow}>
-                                    {TYPES.map((t) => {
-                                        const active = form.productionType === t;
-                                        return (
-                                            <Pressable
-                                                key={t}
-                                                onPress={() => setForm({ ...form, productionType: t })}
-                                                style={[styles.chip, active && styles.chipActive]}
-                                            >
-                                                <Text style={[styles.chipTxt, active && styles.chipTxtActive]}>
-                                                    {t}
-                                                </Text>
-                                            </Pressable>
-                                        );
-                                    })}
+                                <View style={styles.dropdownContainer}>
+                                    <Picker
+                                        selectedValue={form.productionType}
+                                        onValueChange={(value) => setForm({ ...form, productionType: value })}
+                                    >
+                                        <Picker.Item label="Selecione um tipo" value="" />
+                                        {TYPES.map((t) => (
+                                            <Picker.Item key={t} label={t} value={t} />
+                                        ))}
+                                    </Picker>
                                 </View>
                             </View>
 
@@ -110,6 +109,7 @@ export function FarmFormModal({ isOpen, onClose, onSave, editingFarm }: Props) {
                                     value={form.manager}
                                     onChangeText={(v) => setForm({ ...form, manager: v })}
                                     style={styles.input}
+                                    maxLength={40}
                                 />
                             </LabeledInput>
 
@@ -188,4 +188,14 @@ const styles = StyleSheet.create({
     btnPrimaryTxt: { color: "#FFF", fontWeight: "700" },
     btnSecondary: { backgroundColor: "#FFF", borderWidth: 1, borderColor: "#D1D5DB" },
     btnSecondaryTxt: { color: "#111827", fontWeight: "700" },
+    dropdownContainer: {
+        borderWidth: 1,
+        borderColor: "#bbf7d0",
+        borderRadius: 8,
+        overflow: "hidden",
+    },
+    // picker: {
+    //     height: 40,
+    //     color: "#111827",
+    // },
 });

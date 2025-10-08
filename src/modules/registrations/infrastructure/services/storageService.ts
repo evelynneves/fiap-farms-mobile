@@ -9,18 +9,18 @@
  ******************************************************************************/
 
 import { db } from "@/src/modules/shared/infrastructure/firebase";
+import { auth } from "@/src/modules/shared/infrastructure/firebase/firebaseConfig";
 import { addDoc, collection, deleteDoc, doc, getDocs, updateDoc } from "firebase/firestore";
 import { Category } from "../../domain/entities/Category";
 import { Farm } from "../../domain/entities/Farm";
 
-/* ============================
- * FARMS
- * ============================ */
-
-/** Cria uma fazenda e retorna o ID gerado. */
 export async function addFarm(farm: Omit<Farm, "id">): Promise<string> {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuário não autenticado.");
+
     try {
-        const ref = await addDoc(collection(db, "farms"), {
+        const colRef = collection(db, `users/${user.uid}/farms`);
+        const ref = await addDoc(colRef, {
             ...farm,
             lastUpdated: new Date().toISOString(),
         });
@@ -31,10 +31,12 @@ export async function addFarm(farm: Omit<Farm, "id">): Promise<string> {
     }
 }
 
-/** Lista todas as fazendas. */
 export async function getFarms(): Promise<Farm[]> {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuário não autenticado.");
+
     try {
-        const qs = await getDocs(collection(db, "farms"));
+        const qs = await getDocs(collection(db, `users/${user.uid}/farms`));
         return qs.docs.map((d) => ({
             id: d.id,
             ...(d.data() as Omit<Farm, "id">),
@@ -45,10 +47,12 @@ export async function getFarms(): Promise<Farm[]> {
     }
 }
 
-/** Atualiza parcialmente uma fazenda. */
 export async function updateFarm(id: string, data: Partial<Farm>): Promise<void> {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuário não autenticado.");
+
     try {
-        const ref = doc(db, "farms", id);
+        const ref = doc(db, `users/${user.uid}/farms/${id}`);
         await updateDoc(ref, { ...data, lastUpdated: new Date().toISOString() });
     } catch (error) {
         console.error("Erro ao atualizar fazenda:", error);
@@ -56,10 +60,12 @@ export async function updateFarm(id: string, data: Partial<Farm>): Promise<void>
     }
 }
 
-/** Exclui uma fazenda. */
 export async function deleteFarm(id: string): Promise<void> {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuário não autenticado.");
+
     try {
-        const ref = doc(db, "farms", id);
+        const ref = doc(db, `users/${user.uid}/farms/${id}`);
         await deleteDoc(ref);
     } catch (error) {
         console.error("Erro ao excluir fazenda:", error);
@@ -67,14 +73,13 @@ export async function deleteFarm(id: string): Promise<void> {
     }
 }
 
-/* ============================
- * CATEGORIES
- * ============================ */
-
-/** Cria uma categoria e retorna o ID gerado. */
 export async function addCategory(category: Omit<Category, "id">): Promise<string> {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuário não autenticado.");
+
     try {
-        const ref = await addDoc(collection(db, "categories"), {
+        const colRef = collection(db, `users/${user.uid}/categories`);
+        const ref = await addDoc(colRef, {
             ...category,
             lastUpdated: new Date().toISOString(),
         });
@@ -85,10 +90,12 @@ export async function addCategory(category: Omit<Category, "id">): Promise<strin
     }
 }
 
-/** Lista todas as categorias. */
 export async function getCategories(): Promise<Category[]> {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuário não autenticado.");
+
     try {
-        const qs = await getDocs(collection(db, "categories"));
+        const qs = await getDocs(collection(db, `users/${user.uid}/categories`));
         return qs.docs.map((d) => ({
             id: d.id,
             ...(d.data() as Omit<Category, "id">),
@@ -99,10 +106,12 @@ export async function getCategories(): Promise<Category[]> {
     }
 }
 
-/** Atualiza parcialmente uma categoria. */
 export async function updateCategory(id: string, data: Partial<Category>): Promise<void> {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuário não autenticado.");
+
     try {
-        const ref = doc(db, "categories", id);
+        const ref = doc(db, `users/${user.uid}/categories/${id}`);
         await updateDoc(ref, { ...data, lastUpdated: new Date().toISOString() });
     } catch (error) {
         console.error("Erro ao atualizar categoria:", error);
@@ -110,10 +119,12 @@ export async function updateCategory(id: string, data: Partial<Category>): Promi
     }
 }
 
-/** Exclui uma categoria. */
 export async function deleteCategory(id: string): Promise<void> {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuário não autenticado.");
+
     try {
-        const ref = doc(db, "categories", id);
+        const ref = doc(db, `users/${user.uid}/categories/${id}`);
         await deleteDoc(ref);
     } catch (error) {
         console.error("Erro ao excluir categoria:", error);

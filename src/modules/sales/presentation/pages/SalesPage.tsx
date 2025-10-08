@@ -15,7 +15,7 @@ import { SummaryCards } from "@/src/modules/sales/presentation/components/Summar
 import { getGoalsFromStorage, getItemsFromStorage } from "@/src/modules/shared/goal/infrastructure/goalService";
 import { Plus } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 
 export default function SalesScreen() {
     const [products, setProducts] = useState<Item[]>([]);
@@ -104,7 +104,7 @@ export default function SalesScreen() {
     }
 
     return (
-        <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.container}>
             {!!error && <AlertMessage message={error} />}
 
             <SummaryCards totalRevenue={totalRevenue} totalQuantity={totalQty} totalSales={sales.length} />
@@ -142,7 +142,7 @@ export default function SalesScreen() {
                 onSave={handleSaveSale}
                 editingSale={editingSale}
             />
-        </ScrollView>
+        </View>
     );
 }
 

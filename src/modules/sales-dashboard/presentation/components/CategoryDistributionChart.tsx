@@ -51,7 +51,6 @@ export default function CategoryDistributionChart({ data }: Props) {
                     paddingLeft="0"
                 />
 
-                {/* Centro do donut */}
                 <View style={[RNStyleSheet.absoluteFillObject, styles.centerWrap]}>
                     <View style={styles.hole} />
                     <View style={styles.centerLabel}>
@@ -61,7 +60,6 @@ export default function CategoryDistributionChart({ data }: Props) {
                 </View>
             </View>
 
-            {/* Legenda abaixo */}
             <View style={styles.legendContainer}>
                 {data.map((d) => (
                     <View key={d.name} style={styles.legendItem}>

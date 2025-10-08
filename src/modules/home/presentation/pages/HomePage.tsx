@@ -109,7 +109,6 @@ export default function HomeScreen() {
             </View>
 
             <Text style={styles.section}>Aplicações</Text>
-            {/* filtre pelo id (estável) em vez de comparar Href */}
             <DashCards cards={cards.filter((c) => c.id !== "config")} />
         </ScrollView>
     );

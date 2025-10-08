@@ -16,7 +16,7 @@ import { FarmList } from "@/src/modules/registrations/presentation/components/Fa
 import { Tabs } from "@/src/modules/registrations/presentation/components/Tabs";
 import { Plus } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 
 export default function ManageRegistrationsScreen() {
     const [activeTab, setActiveTab] = useState<"farms" | "categories">("farms");
@@ -77,7 +77,7 @@ export default function ManageRegistrationsScreen() {
     }
 
     return (
-        <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.container}>
             {!!error && <AlertMessage message={error} />}
 
             <Tabs active={activeTab} onChange={setActiveTab} />
@@ -157,7 +157,7 @@ export default function ManageRegistrationsScreen() {
                 onSave={handleSaveCategory}
                 editingCategory={editingCategory}
             />
-        </ScrollView>
+        </View>
     );
 }
 

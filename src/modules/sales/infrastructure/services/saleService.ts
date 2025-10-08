@@ -9,6 +9,7 @@
  ******************************************************************************/
 
 import { db } from "@/src/modules/shared/infrastructure/firebase";
+import { auth } from "@/src/modules/shared/infrastructure/firebase/firebaseConfig";
 import { arrayRemove, arrayUnion, collection, doc, getDocs, runTransaction, serverTimestamp } from "firebase/firestore";
 import { Item } from "../../domain/entities/Item";
 import { Sale } from "../../domain/entities/Sale";
@@ -22,22 +23,21 @@ interface ItemSale {
 }
 
 /**
- * Cria uma venda e atualiza o estoque do item de forma atômica.
+ * Cria uma venda em /users/{uid}/sales e atualiza o estoque do item em /users/{uid}/items de forma atômica.
  */
 export async function addSaleToStorage(sale: Omit<Sale, "id" | "totalValue">): Promise<Sale> {
-    const salesCol = collection(db, "sales");
-    const productRef = doc(db, "items", sale.productId);
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuário não autenticado.");
+
+    const salesCol = collection(db, `users/${user.uid}/sales`);
+    const productRef = doc(db, `users/${user.uid}/items/${sale.productId}`);
 
     return await runTransaction(db, async (tx) => {
         const productSnap = await tx.get(productRef);
-        if (!productSnap.exists()) {
-            throw new Error("Produto não encontrado");
-        }
+        if (!productSnap.exists()) throw new Error("Produto não encontrado.");
 
         const product = productSnap.data() as Item;
-        if (sale.quantity > product.quantity) {
-            throw new Error("Quantidade vendida maior que o estoque disponível");
-        }
+        if (sale.quantity > product.quantity) throw new Error("Quantidade vendida maior que o estoque disponível.");
 
         const totalValue = sale.quantity * sale.salePrice;
 
@@ -62,40 +62,42 @@ export async function addSaleToStorage(sale: Omit<Sale, "id" | "totalValue">): P
             lastUpdated: new Date().toISOString().split("T")[0],
         });
 
-        const savedSale: Sale = { id: saleRef.id, ...sale, totalValue };
-        return savedSale;
+        return { id: saleRef.id, ...sale, totalValue };
     });
 }
 
 /**
- * Lista todas as vendas (recalcula totalValue por segurança).
+ * Lista todas as vendas do usuário autenticado (recalcula totalValue por segurança).
  */
 export async function getSalesFromStorage(): Promise<Sale[]> {
-    const qs = await getDocs(collection(db, "sales"));
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuário não autenticado.");
+
+    const qs = await getDocs(collection(db, `users/${user.uid}/sales`));
     return qs.docs.map((d) => {
         const data = d.data() as Omit<Sale, "id">;
-        return {
-            id: d.id,
-            ...data,
-            totalValue: data.quantity * data.salePrice,
-        };
+        return { id: d.id, ...data, totalValue: data.quantity * data.salePrice };
     });
 }
 
 /**
- * Atualiza uma venda e reflete a diferença no estoque do item, de forma atômica.
+ * Atualiza uma venda em /users/{uid}/sales/{id} e reflete a diferença no estoque do item em /users/{uid}/items/{productId}.
  */
 export async function updateSaleInStorage(id: string, sale: Omit<Sale, "id" | "totalValue">): Promise<Sale> {
-    const saleRef = doc(db, "sales", id);
-    const productRef = doc(db, "items", sale.productId);
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuário não autenticado.");
+
+    const saleRef = doc(db, `users/${user.uid}/sales/${id}`);
+    const productRef = doc(db, `users/${user.uid}/items/${sale.productId}`);
 
     return await runTransaction(db, async (tx) => {
         const saleSnap = await tx.get(saleRef);
-        if (!saleSnap.exists()) throw new Error("Venda não encontrada");
+        if (!saleSnap.exists()) throw new Error("Venda não encontrada.");
 
         const oldSale = saleSnap.data() as Sale;
+
         const productSnap = await tx.get(productRef);
-        if (!productSnap.exists()) throw new Error("Produto não encontrado");
+        if (!productSnap.exists()) throw new Error("Produto não encontrado.");
 
         const product = productSnap.data() as Item;
         const totalValue = sale.quantity * sale.salePrice;
@@ -139,18 +141,22 @@ export async function updateSaleInStorage(id: string, sale: Omit<Sale, "id" | "t
 }
 
 /**
- * Exclui uma venda e devolve a quantidade ao estoque do item, de forma atômica.
+ * Exclui uma venda e devolve a quantidade ao estoque do item (ambos em /users/{uid}/...).
  */
 export async function deleteSaleFromStorage(id: string): Promise<void> {
-    const saleRef = doc(db, "sales", id);
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuário não autenticado.");
+
+    const saleRef = doc(db, `users/${user.uid}/sales/${id}`);
 
     await runTransaction(db, async (tx) => {
         const saleSnap = await tx.get(saleRef);
         if (!saleSnap.exists()) return;
 
         const sale = saleSnap.data() as Sale;
-        const productRef = doc(db, "items", sale.productId);
+        const productRef = doc(db, `users/${user.uid}/items/${sale.productId}`);
         const productSnap = await tx.get(productRef);
+
         if (!productSnap.exists()) {
             tx.delete(saleRef);
             return;
@@ -167,7 +173,6 @@ export async function deleteSaleFromStorage(id: string): Promise<void> {
         };
 
         tx.delete(saleRef);
-
         tx.update(productRef, {
             quantity: product.quantity + sale.quantity,
             sales: arrayRemove(itemSale),

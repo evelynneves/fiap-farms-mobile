@@ -106,8 +106,6 @@ export function LoginForm({ isLogin, setIsLogin }: Props) {
                     <View style={s.sepLine} />
                 </View>
 
-                {/* botão Google futuro */}
-
                 <TouchableOpacity onPress={() => !loading && setIsLogin(!isLogin)}>
                     <Text style={s.toggle}>{isLogin ? "Não tem conta? Cadastre-se" : "Já tem conta? Entre"}</Text>
                 </TouchableOpacity>

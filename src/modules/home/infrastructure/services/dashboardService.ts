@@ -9,6 +9,7 @@
  ******************************************************************************/
 
 import { db } from "@/src/modules/shared/infrastructure/firebase";
+import { auth } from "@/src/modules/shared/infrastructure/firebase/firebaseConfig";
 import { collection, getDocs } from "firebase/firestore";
 import { DashboardStat } from "../../domain/entities/DashboardStat";
 
@@ -20,16 +21,19 @@ function formatCurrency(value: number): string {
 }
 
 /**
- * Retorna estatísticas gerais para o dashboard principal do app.
- * Inclui dados de vendas, produção, fazendas e itens.
+ * Retorna estatísticas gerais do dashboard principal do app.
+ * Inclui dados de vendas, produção, fazendas e itens, todos privados por usuário.
  */
 export async function getDashboardStats(): Promise<DashboardStat[]> {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuário não autenticado");
+
     try {
         const [salesSnap, farmsSnap, itemsSnap, productionSnap] = await Promise.all([
-            getDocs(collection(db, "sales")),
-            getDocs(collection(db, "farms")),
-            getDocs(collection(db, "items")),
-            getDocs(collection(db, "production")),
+            getDocs(collection(db, `users/${user.uid}/sales`)),
+            getDocs(collection(db, `users/${user.uid}/farms`)),
+            getDocs(collection(db, `users/${user.uid}/items`)),
+            getDocs(collection(db, `users/${user.uid}/production`)),
         ]);
 
         const now = new Date();
@@ -54,20 +58,19 @@ export async function getDashboardStats(): Promise<DashboardStat[]> {
         });
 
         const farmsCount = farmsSnap.size;
-
         const itemsCount = itemsSnap.size;
 
         return [
             {
                 title: "Vendas do Mês",
                 value: formatCurrency(monthlySales),
-                change: "+0%",
+                change: "+0%", // TODO: calcular comparação com mês anterior
                 positive: true,
             },
             {
                 title: "Produção Ativa",
                 value: `${activeProduction} ton`,
-                change: "+0%",
+                change: "+0%", // TODO: cálculo real
                 positive: true,
             },
             {

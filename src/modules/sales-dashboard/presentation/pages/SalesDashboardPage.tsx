@@ -143,7 +143,6 @@ export default function SalesDashboardScreen() {
                 </View>
             </View>
 
-            {/* Charts 2 */}
             <View style={styles.row}>
                 <View style={styles.cardCol}>
                     <CategoryDistributionChart data={categoryData} />

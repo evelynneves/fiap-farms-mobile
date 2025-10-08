@@ -21,23 +21,19 @@ export default function Error404Screen() {
             <Stack.Screen options={{ headerShown: false }} />
             <SafeAreaView style={{ flex: 1, backgroundColor: "#f9fafb" }}>
                 <View style={styles.container}>
-                    {/* Logo */}
                     <View style={styles.logoRow}>
                         <Text style={styles.logoIcon}>🌱</Text>
                         <Text style={styles.logoText}>FIAP Farms</Text>
                     </View>
 
-                    {/* Ícone grande */}
                     <Text style={styles.bigIcon}>❌</Text>
 
-                    {/* Mensagens */}
                     <View style={styles.message}>
                         <Text style={styles.h1}>404</Text>
                         <Text style={styles.h2}>Página não encontrada</Text>
                         <Text style={styles.p}>A página que você tentou acessar não existe ou foi removida.</Text>
                     </View>
 
-                    {/* Ações */}
                     <View style={styles.actions}>
                         <TouchableOpacity style={styles.button} onPress={handleBack}>
                             <Text style={styles.buttonText}>Voltar</Text>

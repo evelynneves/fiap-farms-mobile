@@ -49,6 +49,7 @@ export function CategoryFormModal({ isOpen, onClose, onSave, editingCategory }: 
                             <Text style={styles.label}>Nome da Categoria *</Text>
                             <TextInput
                                 placeholder="Ex: Grãos"
+                                maxLength={20}
                                 value={name}
                                 onChangeText={setName}
                                 style={styles.input}

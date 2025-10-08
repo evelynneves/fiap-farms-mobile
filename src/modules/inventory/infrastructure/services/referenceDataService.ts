@@ -9,24 +9,37 @@
  ******************************************************************************/
 
 import { db } from "@/src/modules/shared/infrastructure/firebase";
+import { auth } from "@/src/modules/shared/infrastructure/firebase/firebaseConfig";
 import { collection, getDocs } from "firebase/firestore";
 
 type RefItem = { id: string; name: string };
 
-/** Utilitário para mapear documentos Firestore { name } */
+/**
+ * Utilitário para mapear documentos Firestore com campo { name }.
+ */
 const mapRefItem = (d: any): RefItem => ({
     id: d.id,
     ...(d.data() as { name: string }),
 });
 
-/** CATEGORIES */
+/**
+ * Busca as categorias do usuário autenticado.
+ */
 export async function getCategoriesFromStorage(): Promise<RefItem[]> {
-    const qs = await getDocs(collection(db, "categories"));
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuário não autenticado.");
+
+    const qs = await getDocs(collection(db, `users/${user.uid}/categories`));
     return qs.docs.map(mapRefItem);
 }
 
-/** FARMS */
+/**
+ * Busca as fazendas do usuário autenticado.
+ */
 export async function getFarmsFromStorage(): Promise<RefItem[]> {
-    const qs = await getDocs(collection(db, "farms"));
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuário não autenticado.");
+
+    const qs = await getDocs(collection(db, `users/${user.uid}/farms`));
     return qs.docs.map(mapRefItem);
 }

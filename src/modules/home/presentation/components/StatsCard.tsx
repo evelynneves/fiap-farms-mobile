@@ -22,7 +22,6 @@ export default function StatsCard({ stat, icon, tint = "#F1F8F4", onPress }: Pro
         <Container style={styles.card} {...containerProps}>
             <View style={styles.row}>
                 <View style={styles.left}>
-                    {/* Ícone opcional */}
                     {icon ? <View style={[styles.iconWrap, { backgroundColor: tint }]}>{icon}</View> : null}
 
                     <View style={styles.textCol}>

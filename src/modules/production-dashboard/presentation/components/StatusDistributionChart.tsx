@@ -59,7 +59,6 @@ export function StatusDistributionChart({ productions }: Props) {
                     </G>
                 </Svg>
 
-                {/* Legenda abaixo do gráfico */}
                 <View style={styles.legend}>
                     {data.map((d) => {
                         const pct = counts.total ? ((d.value / counts.total) * 100).toFixed(1) : "0.0";

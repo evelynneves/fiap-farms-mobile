@@ -111,7 +111,6 @@ export default function NotificationsDropdown() {
 
     return (
         <View style={{ position: "relative" }}>
-            {/* Botão do sino */}
             <TouchableOpacity style={styles.iconBtn} onPress={() => setOpen(true)}>
                 <Bell size={20} color="#374151" />
                 {unread > 0 && (
@@ -121,12 +120,10 @@ export default function NotificationsDropdown() {
                 )}
             </TouchableOpacity>
 
-            {/* Dropdown como Modal */}
             <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
                 <TouchableOpacity activeOpacity={1} onPress={() => setOpen(false)} style={styles.overlay}>
                     <TouchableWithoutFeedback>
                         <View style={styles.dropdown}>
-                            {/* Header */}
                             <View style={styles.header}>
                                 <Text style={styles.headerTitle}>Notificações</Text>
                                 {!!unread && (
@@ -136,7 +133,6 @@ export default function NotificationsDropdown() {
                                 )}
                             </View>
 
-                            {/* Lista */}
                             <FlatList
                                 data={list}
                                 keyExtractor={(it) => it.id}
@@ -168,7 +164,6 @@ export default function NotificationsDropdown() {
                                 )}
                             />
 
-                            {/* Fechar */}
                             <TouchableOpacity onPress={() => setOpen(false)} style={styles.closeBtn}>
                                 <Text style={styles.closeTxt}>Fechar</Text>
                             </TouchableOpacity>

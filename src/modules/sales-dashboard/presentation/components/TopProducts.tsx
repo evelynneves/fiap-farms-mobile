@@ -18,6 +18,7 @@ export default function TopProducts({ salesData }: Props) {
 
             <FlatList
                 data={topProducts}
+                scrollEnabled={false}
                 keyExtractor={(i) => i.product}
                 ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
                 renderItem={({ item, index }) => (
@@ -34,7 +35,6 @@ export default function TopProducts({ salesData }: Props) {
 
                         <View style={{ alignItems: "flex-end" }}>
                             <Text style={styles.profit}>{currency(item.profit)}</Text>
-                            {/* growth opcional futuramente */}
                         </View>
                     </View>
                 )}

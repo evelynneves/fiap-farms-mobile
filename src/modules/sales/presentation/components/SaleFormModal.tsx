@@ -126,7 +126,6 @@ export function SaleFormModal({ isOpen, onClose, onSave, products, editingSale }
 
                     {!!error && <AlertMessage message={error} />}
 
-                    {/* Produto */}
                     <View style={styles.field}>
                         <Text style={styles.label}>Produto *</Text>
                         <View style={styles.pickerWrap}>
@@ -159,7 +158,6 @@ export function SaleFormModal({ isOpen, onClose, onSave, products, editingSale }
                         </View>
                     )}
 
-                    {/* Quantidade */}
                     <View style={styles.field}>
                         <Text style={styles.label}>Quantidade Vendida *</Text>
                         <TextInput
@@ -171,7 +169,6 @@ export function SaleFormModal({ isOpen, onClose, onSave, products, editingSale }
                         />
                     </View>
 
-                    {/* Preço de venda */}
                     <View style={styles.field}>
                         <Text style={styles.label}>Preço de Venda (R$) *</Text>
                         <TextInput
@@ -183,7 +180,6 @@ export function SaleFormModal({ isOpen, onClose, onSave, products, editingSale }
                         />
                     </View>
 
-                    {/* Data */}
                     <View style={styles.field}>
                         <Text style={styles.label}>Data da Venda *</Text>
                         <Pressable onPress={openDate} style={styles.input}>
@@ -207,7 +203,6 @@ export function SaleFormModal({ isOpen, onClose, onSave, products, editingSale }
                         </View>
                     ) : null}
 
-                    {/* Actions */}
                     <View style={styles.actions}>
                         <Pressable style={[styles.btn, styles.btnPrimary]} onPress={submit}>
                             <Text style={styles.btnPrimaryText}>{editingSale ? "Atualizar" : "Registrar"}</Text>

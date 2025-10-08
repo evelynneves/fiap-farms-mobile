@@ -23,7 +23,6 @@ export function SalesList({ sales, onEdit, onDelete }: Props) {
             contentContainerStyle={{ gap: 12 }}
             renderItem={({ item }) => (
                 <View style={styles.card}>
-                    {/* Header */}
                     <View style={styles.cardHeader}>
                         <View style={styles.titleWrap}>
                             <Package size={16} color="#10B981" />
@@ -32,7 +31,6 @@ export function SalesList({ sales, onEdit, onDelete }: Props) {
                         {item.hasRelatedGoal && <Badge tone="goal">Meta Vinculada</Badge>}
                     </View>
 
-                    {/* Body */}
                     <View style={styles.infoGroup}>
                         <View style={styles.infoRow}>
                             <Text style={styles.label}>Fazenda:</Text>
@@ -60,7 +58,6 @@ export function SalesList({ sales, onEdit, onDelete }: Props) {
                         </View>
                     </View>
 
-                    {/* Footer - Ações */}
                     <View style={styles.actions}>
                         <Pressable onPress={() => onEdit(item)} style={[styles.btn, styles.btnSecondary]}>
                             <Edit size={16} color="#111827" />

@@ -35,7 +35,6 @@ const ProfileCard: React.FC<Props> = ({ profileData, onSaveProfile }) => {
             </Text>
             <Text style={styles.subtitle}>Gerencie suas informações pessoais</Text>
 
-            {/* info header */}
             <View style={styles.infoRow}>
                 <View style={styles.avatarWrap}>
                     <View style={styles.avatar}>

@@ -10,16 +10,20 @@
 
 import { getItemsFromStorage } from "@/src/modules/shared/goal/infrastructure/goalService";
 import { db } from "@/src/modules/shared/infrastructure/firebase";
+import { auth } from "@/src/modules/shared/infrastructure/firebase/firebaseConfig";
 import { collection, getDocs } from "firebase/firestore";
 import { toDashboardSales } from "../../application/usecases/transformSalesToDashboard";
 import { DashboardSale, Sale } from "../../domain/entities/Sale";
 
 /**
- * Busca todas as vendas no Firestore.
+ * Busca todas as vendas do usuário autenticado.
  * Recalcula `totalValue` por segurança.
  */
 export async function getSalesFromStorage(): Promise<Sale[]> {
-    const qs = await getDocs(collection(db, "sales"));
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuário não autenticado.");
+
+    const qs = await getDocs(collection(db, `users/${user.uid}/sales`));
     return qs.docs.map((d) => {
         const data = d.data() as Omit<Sale, "id">;
         return {

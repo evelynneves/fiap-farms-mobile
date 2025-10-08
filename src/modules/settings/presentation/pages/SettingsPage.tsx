@@ -9,6 +9,7 @@ import LogoutCard from "../components/LogoutCard";
 import ProfileCard, { ProfileData } from "../components/ProfileCard";
 import QuickStatsCard from "../components/QuickStatsCard";
 
+import { db } from "@/src/modules/shared/infrastructure/firebase";
 import { auth } from "@/src/modules/shared/infrastructure/firebase/firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
@@ -94,18 +95,13 @@ const SettingsScreen: React.FC = () => {
                     </View>
                 )}
 
-                {/* “Main” empilhado no mobile */}
                 <View style={styles.main}>
                     <ProfileCard profileData={profileData} onSaveProfile={persistProfile} />
                     <AccountCard />
                 </View>
 
-                {/* “Aside” vira uma coluna abaixo */}
                 <View style={styles.aside}>
                     <AboutCard />
-                    {/* ADAPTAÇÃO: seu LogoutCard no web recebia o navigate do react-router.
-             Aqui passamos um adaptador que chama o React Navigation.
-             Ideal: atualizar o LogoutCard para aceitar props do tipo onLogout / onNavigate(routeName). */}
                     <LogoutCard navigate={(routeName: string) => navigation.navigate(routeName as never)} />
                     <QuickStatsCard />
                 </View>

@@ -119,7 +119,7 @@ export default function InventoryScreen() {
     }
 
     return (
-        <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.container}>
             {!!error && <AlertMessage message={error} />}
 
             <SummaryCards totalItems={items.length} lowStockCount={lowStockItems.length} totalValue={totalValue} />
@@ -187,7 +187,7 @@ export default function InventoryScreen() {
                 farms={farms}
                 units={units}
             />
-        </ScrollView>
+        </View>
     );
 }
 

@@ -34,7 +34,6 @@ const AccountCard: React.FC = () => {
             </Text>
             <Text style={styles.subtitle}>Configurações de segurança e conta</Text>
 
-            {/* Redefinir senha */}
             <View style={styles.section}>
                 <View style={styles.leftRow}>
                     <Lock size={20} color="#6b7280" />
@@ -44,7 +43,6 @@ const AccountCard: React.FC = () => {
                     </View>
                 </View>
 
-                {/* Botão full width */}
                 <TouchableOpacity
                     style={[styles.fullBtn, styles.btnOutline]}
                     onPress={() => alert("Redefinir senha em breve!")}
@@ -55,7 +53,6 @@ const AccountCard: React.FC = () => {
 
             <View style={styles.hr} />
 
-            {/* Configurações de notificações */}
             <View style={{ gap: 8 }}>
                 <Text style={styles.h3Row}>
                     <Bell size={18} color="#16a34a" /> Configurações de Notificações
@@ -90,7 +87,6 @@ const AccountCard: React.FC = () => {
 
             <View style={styles.hr} />
 
-            {/* Excluir conta */}
             <View style={styles.deleteSection}>
                 <View style={styles.leftRow}>
                     <Trash2 size={20} color="#dc2626" />
@@ -100,7 +96,6 @@ const AccountCard: React.FC = () => {
                     </View>
                 </View>
 
-                {/* Botão full width */}
                 <TouchableOpacity
                     style={[styles.fullBtn, styles.btnDanger]}
                     onPress={() => alert("Excluir conta em breve!")}
