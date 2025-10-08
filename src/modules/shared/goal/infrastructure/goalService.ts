@@ -8,7 +8,7 @@
  *                                                                             *
  ******************************************************************************/
 
-import { collection, doc, getDocs, updateDoc } from "firebase/firestore";
+import { collection, doc, getDocs, onSnapshot, updateDoc } from "firebase/firestore";
 import { db } from "../../infrastructure/firebase";
 import { auth } from "../../infrastructure/firebase/firebaseConfig";
 import { Goal } from "../domain/entities/Goal";
@@ -77,4 +77,53 @@ export async function updateGoalFirestore(goal: Goal): Promise<void> {
 
     const ref = doc(db, `users/${user.uid}/goals/${goal.id}`);
     await updateDoc(ref, { ...goal, updatedAt: new Date().toISOString() });
+}
+
+/* -------------------------------------------------------------------------- */
+/* Subscrições em tempo real (onSnapshot)                                     */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Escuta alterações em tempo real nos itens do usuário.
+ */
+export function subscribeItems(cb: (items: Item[]) => void) {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuário não autenticado.");
+
+    const col = collection(db, `users/${user.uid}/items`);
+    return onSnapshot(col, (snap) => {
+        const list = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Item));
+        cb(list);
+    });
+}
+
+/**
+ * Escuta alterações em tempo real nas vendas do usuário.
+ */
+export function subscribeSales(cb: (sales: Sale[]) => void) {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuário não autenticado.");
+
+    const col = collection(db, `users/${user.uid}/sales`);
+    return onSnapshot(col, (snap) => {
+        const list = snap.docs.map((d) => {
+            const data = d.data() as Omit<Sale, "id">;
+            return { id: d.id, ...data, totalValue: data.quantity * data.salePrice };
+        });
+        cb(list);
+    });
+}
+
+/**
+ * Escuta alterações em tempo real nas metas do usuário.
+ */
+export function subscribeGoals(cb: (goals: Goal[]) => void) {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuário não autenticado.");
+
+    const col = collection(db, `users/${user.uid}/goals`);
+    return onSnapshot(col, (snap) => {
+        const list = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Goal));
+        cb(list);
+    });
 }

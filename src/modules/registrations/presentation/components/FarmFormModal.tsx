@@ -31,7 +31,17 @@ export function FarmFormModal({ isOpen, onClose, onSave, editingFarm }: Props) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [editingFarm, isOpen]);
 
+    const requiredFilled =
+        form.name.trim().length > 0 &&
+        form.location.trim().length > 0 &&
+        form.totalArea > 0 &&
+        form.productionType.trim().length > 0 &&
+        form.manager.trim().length > 0;
+
+    const canSubmit = requiredFilled;
+
     const submit = () => {
+        if (!canSubmit) return;
         onSave(form, !!editingFarm);
         setForm(initial);
         onClose();
@@ -114,7 +124,11 @@ export function FarmFormModal({ isOpen, onClose, onSave, editingFarm }: Props) {
                             </LabeledInput>
 
                             <View style={styles.actions}>
-                                <Pressable onPress={submit} style={[styles.btn, styles.btnPrimary]}>
+                                <Pressable
+                                    onPress={submit}
+                                    disabled={!canSubmit}
+                                    style={[styles.btn, styles.btnPrimary, !canSubmit && styles.btnDisabled]}
+                                >
                                     <Text style={styles.btnPrimaryTxt}>{editingFarm ? "Atualizar" : "Cadastrar"}</Text>
                                 </Pressable>
                                 <Pressable
@@ -165,23 +179,8 @@ const styles = StyleSheet.create({
     sub: { marginTop: 4, color: "#6B7280" },
     closeBtn: { position: "absolute", right: 8, top: 8, padding: 4 },
     closeTxt: { fontSize: 22, color: "#111827" },
-
     label: { fontSize: 14, fontWeight: "600", color: "#374151" },
     input: { height: 44, borderWidth: 1, borderColor: "#BBF7D0", borderRadius: 6, paddingHorizontal: 12 },
-
-    chipsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-    chip: {
-        borderWidth: 1,
-        borderColor: "#D1D5DB",
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        borderRadius: 8,
-        backgroundColor: "#FFF",
-    },
-    chipActive: { backgroundColor: "#16A34A", borderColor: "#15803D" },
-    chipTxt: { color: "#111827" },
-    chipTxtActive: { color: "#FFF", fontWeight: "700" },
-
     actions: { flexDirection: "row", gap: 8, marginTop: 8 },
     btn: { paddingVertical: 12, paddingHorizontal: 16, borderRadius: 8, alignItems: "center", flex: 1 },
     btnPrimary: { backgroundColor: "#10B981" },
@@ -194,8 +193,5 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         overflow: "hidden",
     },
-    // picker: {
-    //     height: 40,
-    //     color: "#111827",
-    // },
+    btnDisabled: { opacity: 0.5 },
 });

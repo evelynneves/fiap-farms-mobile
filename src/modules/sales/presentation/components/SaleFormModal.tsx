@@ -68,39 +68,55 @@ export function SaleFormModal({ isOpen, onClose, onSave, products, editingSale }
         return q * p;
     }, [form.quantity, form.salePrice]);
 
+    const requiredFilled =
+        form.productId.trim().length > 0 &&
+        form.quantity.trim().length > 0 &&
+        form.salePrice.trim().length > 0 &&
+        form.date.trim().length > 0;
+
+    const quantityNum = parseFloat(form.quantity);
+    const priceNum = parseFloat(form.salePrice);
+    const validNumbers = Number.isFinite(quantityNum) && Number.isFinite(priceNum) && quantityNum > 0 && priceNum > 0;
+
+    const canSubmit = requiredFilled && validNumbers;
+
     const submit = () => {
         setError("");
-        if (!form.productId || !form.quantity || !form.salePrice || !form.date) {
-            setError("Por favor, preencha todos os campos obrigatórios.");
+
+        if (!canSubmit) {
+            setError("Por favor, preencha todos os campos obrigatórios corretamente.");
             return;
         }
+
         const product = selectedProduct;
         if (!product) {
             setError("Produto não encontrado.");
             return;
         }
-        const quantity = Number(form.quantity);
-        const salePrice = Number(form.salePrice);
-        if (!Number.isInteger(quantity) || quantity <= 0) {
+
+        if (!Number.isInteger(quantityNum) || quantityNum <= 0) {
             setError("A quantidade vendida deve ser um número inteiro maior que zero.");
             return;
         }
+
         const sale: Sale = {
             id: editingSale ? editingSale.id : "",
             productId: product.id,
             productName: product.name,
             farmName: `Fazenda ${product.farm}`,
-            quantity,
-            salePrice,
-            totalValue: quantity * salePrice,
+            quantity: quantityNum,
+            salePrice: priceNum,
+            totalValue: quantityNum * priceNum,
             date: form.date,
         };
+
         onSave(sale, !!editingSale);
         onClose();
         reset();
     };
 
     const openDate = () => setShowPicker(true);
+
     const onDateChange = (_: any, date?: Date) => {
         if (Platform.OS !== "ios") setShowPicker(false);
         if (!date) return;
@@ -204,9 +220,14 @@ export function SaleFormModal({ isOpen, onClose, onSave, products, editingSale }
                     ) : null}
 
                     <View style={styles.actions}>
-                        <Pressable style={[styles.btn, styles.btnPrimary]} onPress={submit}>
-                            <Text style={styles.btnPrimaryText}>{editingSale ? "Atualizar" : "Registrar"}</Text>
+                        <Pressable
+                            style={[styles.btn, styles.btnPrimary, !canSubmit && styles.btnDisabled]}
+                            onPress={submit}
+                            disabled={!canSubmit}
+                        >
+                            <Text style={[styles.btnPrimaryText]}>{editingSale ? "Atualizar" : "Registrar"}</Text>
                         </Pressable>
+
                         <Pressable style={[styles.btn, styles.btnSecondary]} onPress={onClose}>
                             <Text style={styles.btnSecondaryText}>Cancelar</Text>
                         </Pressable>
@@ -253,23 +274,15 @@ const styles = StyleSheet.create({
     infoLine: { color: "#374151", fontSize: 14 },
     infoStrong: { fontWeight: "600" },
 
-    totalBox: {
-        backgroundColor: "#F3F4F6",
-        borderRadius: 8,
-        padding: 10,
-    },
+    totalBox: { backgroundColor: "#F3F4F6", borderRadius: 8, padding: 10 },
     totalText: { fontWeight: "700", color: "#111827" },
 
     actions: { flexDirection: "row", gap: 10, marginTop: 4 },
-    btn: {
-        flex: 1,
-        height: 44,
-        borderRadius: 8,
-        alignItems: "center",
-        justifyContent: "center",
-    },
+    btn: { flex: 1, height: 44, borderRadius: 8, alignItems: "center", justifyContent: "center" },
     btnPrimary: { backgroundColor: "#10B981" },
     btnPrimaryText: { color: "#fff", fontWeight: "700" },
     btnSecondary: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#E5E7EB" },
     btnSecondaryText: { color: "#111827", fontWeight: "600" },
+
+    btnDisabled: { opacity: 0.5 },
 });

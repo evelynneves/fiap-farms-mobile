@@ -16,7 +16,10 @@ export function CategoryFormModal({ isOpen, onClose, onSave, editingCategory }: 
         setName(editingCategory?.name ?? "");
     }, [editingCategory, isOpen]);
 
+    const canSubmit = name.trim().length > 0;
+
     const submit = () => {
+        if (!canSubmit) return;
         const category: Category = { id: editingCategory?.id ?? "", name: name.trim() };
         onSave(category, !!editingCategory);
         setName("");
@@ -56,7 +59,11 @@ export function CategoryFormModal({ isOpen, onClose, onSave, editingCategory }: 
                             />
 
                             <View style={styles.actions}>
-                                <Pressable onPress={submit} style={[styles.btn, styles.btnPrimary]}>
+                                <Pressable
+                                    onPress={submit}
+                                    disabled={!canSubmit}
+                                    style={[styles.btn, styles.btnPrimary, !canSubmit && styles.btnDisabled]}
+                                >
                                     <Text style={styles.btnPrimaryTxt}>{editingCategory ? "Salvar" : "Cadastrar"}</Text>
                                 </Pressable>
                                 <Pressable onPress={onClose} style={[styles.btn, styles.btnSecondary]}>
@@ -100,4 +107,5 @@ const styles = StyleSheet.create({
     btnPrimaryTxt: { color: "#FFF", fontWeight: "700" },
     btnSecondary: { backgroundColor: "#FFF", borderWidth: 1, borderColor: "#D1D5DB" },
     btnSecondaryTxt: { color: "#111827", fontWeight: "700" },
+    btnDisabled: { opacity: 0.5 },
 });

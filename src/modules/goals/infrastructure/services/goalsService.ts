@@ -39,12 +39,10 @@ export async function fetchGoals(): Promise<Goal[]> {
 /**
  * Cria uma nova meta no Firestore.
  */
-export async function createGoal(input: Omit<Goal, "id">): Promise<Goal> {
+export async function createGoal(goal: Omit<Goal, "id">): Promise<void> {
     const col = getGoalsCollection();
     const ref = doc(col);
-    const saved: Goal = { id: ref.id, ...input };
-    await setDoc(ref, saved);
-    return saved;
+    await setDoc(ref, { ...goal, id: ref.id });
 }
 
 /**
@@ -63,6 +61,7 @@ export async function updateGoalFirestore(goal: Goal): Promise<void> {
  * Exclui uma meta do Firestore.
  */
 export async function deleteGoalFirestore(id: string): Promise<void> {
+    if (!id) throw new Error("ID da meta ausente");
     const ref = doc(getGoalsCollection(), id);
     await deleteDoc(ref);
 }

@@ -1,14 +1,13 @@
 import { addItem } from "@/src/modules/inventory/application/usecases/addItem";
 import { deleteItem } from "@/src/modules/inventory/application/usecases/deleteItem";
 import { updateItem } from "@/src/modules/inventory/application/usecases/updateItem";
-import { Item } from "@/src/modules/inventory/domain/entities/Item";
 import {
     addNotification,
     getFreshNotificationsConfig,
 } from "@/src/modules/inventory/infrastructure/services/notificationService";
 import {
-    getCategoriesFromStorage,
-    getFarmsFromStorage,
+    subscribeCategories,
+    subscribeFarms,
 } from "@/src/modules/inventory/infrastructure/services/referenceDataService";
 import { AlertMessage } from "@/src/modules/inventory/presentation/components/AlertMessage";
 import { EmptyState } from "@/src/modules/inventory/presentation/components/EmptyState";
@@ -17,19 +16,18 @@ import { ItemFormModal } from "@/src/modules/inventory/presentation/components/I
 import { ItemList } from "@/src/modules/inventory/presentation/components/ItemTable";
 import { SummaryCards } from "@/src/modules/inventory/presentation/components/SummaryCards";
 import { getStockStatus } from "@/src/modules/inventory/utils/getStockStatus";
-import { Sale } from "@/src/modules/shared/goal";
-import {
-    getGoalsFromStorage,
-    getItemsFromStorage,
-    getSalesFromStorage,
-} from "@/src/modules/shared/goal/infrastructure/goalService";
+import { Goal, Sale } from "@/src/modules/shared/goal";
+import { subscribeGoals, subscribeItems, subscribeSales } from "@/src/modules/shared/goal/infrastructure/goalService";
 import React, { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Item } from "../../domain/entities/Item";
 
 export default function InventoryScreen() {
     const [categories, setCategories] = useState<string[]>([]);
     const [farms, setFarms] = useState<string[]>([]);
     const [items, setItems] = useState<Item[]>([]);
+    const [sales, setSales] = useState<Sale[]>([]);
+    const [goals, setGoals] = useState<Goal[]>([]);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(true);
 
@@ -48,34 +46,41 @@ export default function InventoryScreen() {
     const totalValue = items.reduce((sum, i) => sum + i.quantity * i.costPrice, 0);
 
     useEffect(() => {
-        (async () => {
-            try {
-                setLoading(true);
-                const [cats, fs, its, sales, goals] = await Promise.all([
-                    getCategoriesFromStorage(),
-                    getFarmsFromStorage(),
-                    getItemsFromStorage(),
-                    getSalesFromStorage(),
-                    getGoalsFromStorage(),
-                ]);
+        let unsubCats: undefined | (() => void);
+        let unsubFarms: undefined | (() => void);
+        let unsubItems: undefined | (() => void);
+        let unsubSales: undefined | (() => void);
+        let unsubGoals: undefined | (() => void);
 
-                const enriched: Item[] = (its as unknown as Item[]).map((item) => {
-                    const productSales: Sale[] = sales.filter((s) => s.productId === item.id);
-                    const hasRelatedGoal = goals.some((g) => g.productId === item.id);
-                    return { ...item, sales: productSales, hasRelatedGoal };
-                });
+        try {
+            unsubCats = subscribeCategories((cats) => setCategories(cats.map((c) => c.name)));
+            unsubFarms = subscribeFarms((fs) => setFarms(fs.map((f) => f.name)));
 
-                setCategories(cats.map((c) => c.name));
-                setFarms(fs.map((f) => f.name));
-                setItems(enriched);
-                setError("");
-            } catch (e: any) {
-                setError(e.message ?? "Erro ao carregar inventário");
-            } finally {
-                setLoading(false);
-            }
-        })();
-    }, []);
+            unsubSales = subscribeSales(setSales);
+            unsubGoals = subscribeGoals(setGoals);
+            unsubItems = subscribeItems((its) => {
+                setItems(
+                    its.map((item) => {
+                        const productSales = sales.filter((s) => s.productId === item.id);
+                        const hasRelatedGoal = goals.some((g) => g.productId === item.id);
+                        return { ...item, sales: productSales, hasRelatedGoal } as Item;
+                    })
+                );
+            });
+        } catch (e: any) {
+            setError(e.message ?? "Erro ao assinar dados em tempo real");
+        } finally {
+            setLoading(false);
+        }
+
+        return () => {
+            unsubCats?.();
+            unsubFarms?.();
+            unsubItems?.();
+            unsubSales?.();
+            unsubGoals?.();
+        };
+    }, [sales, goals]);
 
     const handleSave = async (item: Item, isEdit: boolean) => {
         try {
@@ -110,6 +115,12 @@ export default function InventoryScreen() {
         }
     };
 
+    useEffect(() => {
+        if (selectedCategory !== "all" && !categories.includes(selectedCategory)) {
+            setSelectedCategory("all");
+        }
+    }, [categories, selectedCategory]);
+
     if (loading) {
         return (
             <View style={styles.loading}>
@@ -119,10 +130,11 @@ export default function InventoryScreen() {
     }
 
     return (
-        <View style={styles.container}>
+        <ScrollView contentContainerStyle={styles.container}>
             {!!error && <AlertMessage message={error} />}
 
             <SummaryCards totalItems={items.length} lowStockCount={lowStockItems.length} totalValue={totalValue} />
+
             <Pressable
                 onPress={() => {
                     setEditingItem(null);
@@ -132,8 +144,9 @@ export default function InventoryScreen() {
             >
                 <Text style={styles.btnPrimaryTxt}>+ Adicionar Item</Text>
             </Pressable>
-            <View style={styles.controls}>
-                <View style={styles.filterRow}>
+
+            <View>
+                <View className="filterRow" style={styles.filterRow}>
                     <ScrollView
                         horizontal
                         showsHorizontalScrollIndicator={false}
@@ -187,7 +200,7 @@ export default function InventoryScreen() {
                 farms={farms}
                 units={units}
             />
-        </View>
+        </ScrollView>
     );
 }
 
@@ -214,16 +227,6 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 3,
     },
-    btnPrimaryTxt: {
-        color: "#FFF",
-        fontWeight: "700",
-        textAlign: "center",
-        fontSize: 15,
-        letterSpacing: 0.3,
-    },
-    fullWidthBtn: {
-        width: "100%",
-        alignSelf: "center",
-        marginTop: 6,
-    },
+    btnPrimaryTxt: { color: "#FFF", fontWeight: "700", textAlign: "center", fontSize: 15, letterSpacing: 0.3 },
+    fullWidthBtn: { width: "100%", alignSelf: "center", marginTop: 6 },
 });

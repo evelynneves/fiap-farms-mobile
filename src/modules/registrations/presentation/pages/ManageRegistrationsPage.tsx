@@ -1,13 +1,12 @@
 import { addCategory } from "@/src/modules/registrations/application/usecases/addCategory";
 import { addFarm } from "@/src/modules/registrations/application/usecases/addFarm";
-import { deleteCategory } from "@/src/modules/registrations/application/usecases/deleteCategory";
 import { deleteFarm } from "@/src/modules/registrations/application/usecases/deleteFarm";
 import { listCategory } from "@/src/modules/registrations/application/usecases/listCategory";
 import { updateCategory } from "@/src/modules/registrations/application/usecases/updateCategory";
 import { updateFarm } from "@/src/modules/registrations/application/usecases/updateFarm";
 import { Category } from "@/src/modules/registrations/domain/entities/Category";
 import { Farm } from "@/src/modules/registrations/domain/entities/Farm";
-import { getFarms } from "@/src/modules/registrations/infrastructure/services/storageService";
+import { deleteCategory, getFarms } from "@/src/modules/registrations/infrastructure/services/storageService";
 import { AlertMessage } from "@/src/modules/registrations/presentation/components/AlertMessage";
 import { CategoryFormModal } from "@/src/modules/registrations/presentation/components/CategoryFormModal";
 import { CategoryList } from "@/src/modules/registrations/presentation/components/CategoryList";
@@ -137,8 +136,8 @@ export default function ManageRegistrationsScreen() {
                             setIsCategoryModalOpen(true);
                         }}
                         onDelete={async (id) => {
-                            const deleted = await deleteCategory(categories, id);
-                            setCategories(deleted);
+                            await deleteCategory(id);
+                            setCategories((prev) => prev.filter((c) => (c.id === id ? false : true)));
                         }}
                     />
                 </View>

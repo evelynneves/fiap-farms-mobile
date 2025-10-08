@@ -14,120 +14,78 @@ import { addDoc, collection, deleteDoc, doc, getDocs, updateDoc } from "firebase
 import { Category } from "../../domain/entities/Category";
 import { Farm } from "../../domain/entities/Farm";
 
-export async function addFarm(farm: Omit<Farm, "id">): Promise<string> {
+function requireUser() {
     const user = auth.currentUser;
     if (!user) throw new Error("Usuário não autenticado.");
+    return user;
+}
 
-    try {
-        const colRef = collection(db, `users/${user.uid}/farms`);
-        const ref = await addDoc(colRef, {
-            ...farm,
-            lastUpdated: new Date().toISOString(),
-        });
-        return ref.id;
-    } catch (error) {
-        console.error("Erro ao adicionar fazenda:", error);
-        throw error;
-    }
+/** =================== FARMS =================== */
+
+export async function addFarm(farm: Omit<Farm, "id">): Promise<string> {
+    const user = requireUser();
+    const colRef = collection(db, `users/${user.uid}/farms`);
+    const ref = await addDoc(colRef, {
+        ...farm,
+        lastUpdated: new Date().toISOString(),
+    });
+    return ref.id;
 }
 
 export async function getFarms(): Promise<Farm[]> {
-    const user = auth.currentUser;
-    if (!user) throw new Error("Usuário não autenticado.");
-
-    try {
-        const qs = await getDocs(collection(db, `users/${user.uid}/farms`));
-        return qs.docs.map((d) => ({
-            id: d.id,
-            ...(d.data() as Omit<Farm, "id">),
-        }));
-    } catch (error) {
-        console.error("Erro ao buscar fazendas:", error);
-        throw error;
-    }
+    const user = requireUser();
+    const qs = await getDocs(collection(db, `users/${user.uid}/farms`));
+    return qs.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as Omit<Farm, "id">),
+    }));
 }
 
 export async function updateFarm(id: string, data: Partial<Farm>): Promise<void> {
-    const user = auth.currentUser;
-    if (!user) throw new Error("Usuário não autenticado.");
-
-    try {
-        const ref = doc(db, `users/${user.uid}/farms/${id}`);
-        await updateDoc(ref, { ...data, lastUpdated: new Date().toISOString() });
-    } catch (error) {
-        console.error("Erro ao atualizar fazenda:", error);
-        throw error;
-    }
+    const user = requireUser();
+    if (!id) throw new Error("ID da fazenda inválido.");
+    const ref = doc(db, `users/${user.uid}/farms/${id}`);
+    await updateDoc(ref, { ...data, lastUpdated: new Date().toISOString() });
 }
 
 export async function deleteFarm(id: string): Promise<void> {
-    const user = auth.currentUser;
-    if (!user) throw new Error("Usuário não autenticado.");
-
-    try {
-        const ref = doc(db, `users/${user.uid}/farms/${id}`);
-        await deleteDoc(ref);
-    } catch (error) {
-        console.error("Erro ao excluir fazenda:", error);
-        throw error;
-    }
+    const user = requireUser();
+    if (!id) throw new Error("ID da fazenda inválido.");
+    const ref = doc(db, `users/${user.uid}/farms/${id}`);
+    await deleteDoc(ref);
 }
 
-export async function addCategory(category: Omit<Category, "id">): Promise<string> {
-    const user = auth.currentUser;
-    if (!user) throw new Error("Usuário não autenticado.");
+/** =================== CATEGORIES =================== */
 
-    try {
-        const colRef = collection(db, `users/${user.uid}/categories`);
-        const ref = await addDoc(colRef, {
-            ...category,
-            lastUpdated: new Date().toISOString(),
-        });
-        return ref.id;
-    } catch (error) {
-        console.error("Erro ao adicionar categoria:", error);
-        throw error;
-    }
+export async function addCategory(category: Omit<Category, "id">): Promise<string> {
+    const user = requireUser();
+    const colRef = collection(db, `users/${user.uid}/categories`);
+    const ref = await addDoc(colRef, {
+        ...category,
+        lastUpdated: new Date().toISOString(),
+    });
+    return ref.id;
 }
 
 export async function getCategories(): Promise<Category[]> {
-    const user = auth.currentUser;
-    if (!user) throw new Error("Usuário não autenticado.");
-
-    try {
-        const qs = await getDocs(collection(db, `users/${user.uid}/categories`));
-        return qs.docs.map((d) => ({
-            id: d.id,
-            ...(d.data() as Omit<Category, "id">),
-        }));
-    } catch (error) {
-        console.error("Erro ao buscar categorias:", error);
-        throw error;
-    }
+    const user = requireUser();
+    const qs = await getDocs(collection(db, `users/${user.uid}/categories`));
+    return qs.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as Omit<Category, "id">),
+    }));
 }
 
 export async function updateCategory(id: string, data: Partial<Category>): Promise<void> {
-    const user = auth.currentUser;
-    if (!user) throw new Error("Usuário não autenticado.");
-
-    try {
-        const ref = doc(db, `users/${user.uid}/categories/${id}`);
-        await updateDoc(ref, { ...data, lastUpdated: new Date().toISOString() });
-    } catch (error) {
-        console.error("Erro ao atualizar categoria:", error);
-        throw error;
-    }
+    const user = requireUser();
+    if (!id) throw new Error("ID da categoria inválido.");
+    const ref = doc(db, `users/${user.uid}/categories/${id}`);
+    await updateDoc(ref, { ...data, lastUpdated: new Date().toISOString() });
 }
 
 export async function deleteCategory(id: string): Promise<void> {
-    const user = auth.currentUser;
-    if (!user) throw new Error("Usuário não autenticado.");
-
-    try {
-        const ref = doc(db, `users/${user.uid}/categories/${id}`);
-        await deleteDoc(ref);
-    } catch (error) {
-        console.error("Erro ao excluir categoria:", error);
-        throw error;
-    }
+    const user = requireUser();
+    if (!id) throw new Error("ID da categoria inválido.");
+    const ref = doc(db, `users/${user.uid}/categories/${id}`);
+    await deleteDoc(ref);
 }

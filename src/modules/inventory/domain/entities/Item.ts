@@ -5,6 +5,7 @@ export interface StockEntry {
     date: string;
     quantity: number;
     note?: string;
+    showPicker: boolean;
 }
 
 export interface Item {

@@ -21,6 +21,7 @@ export function SalesList({ sales, onEdit, onDelete }: Props) {
             data={sales}
             keyExtractor={(s) => s.id}
             contentContainerStyle={{ gap: 12 }}
+            scrollEnabled={false}
             renderItem={({ item }) => (
                 <View style={styles.card}>
                     <View style={styles.cardHeader}>

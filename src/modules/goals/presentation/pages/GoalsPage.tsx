@@ -1,4 +1,5 @@
 import { Goal } from "@/src/modules/goals/domain/entities/Goal";
+import type { Item as GoalsItem } from "@/src/modules/goals/domain/entities/Item";
 import { Item } from "@/src/modules/goals/domain/entities/Item";
 import {
     createGoal,
@@ -17,41 +18,71 @@ import { GoalCard } from "@/src/modules/goals/presentation/components/GoalCard";
 import { GoalFormModal } from "@/src/modules/goals/presentation/components/GoalFormModal";
 import { SummaryCards } from "@/src/modules/goals/presentation/components/SummaryCards";
 import { recalculateGoalsProgress } from "@/src/modules/shared/goal";
-import { getItemsFromStorage, getSalesFromStorage } from "@/src/modules/shared/goal/infrastructure/goalService";
+import type { Item as SharedItem } from "@/src/modules/shared/goal/domain/entities/Item";
+import { subscribeGoals, subscribeItems, subscribeSales } from "@/src/modules/shared/goal/infrastructure/goalService";
 import { Plus } from "lucide-react-native";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function GoalsScreen() {
     const [selectedType, setSelectedType] = useState<"all" | "sales" | "production">("all");
     const [goals, setGoals] = useState<Goal[]>([]);
     const [products, setProducts] = useState<Item[]>([]);
+    const [sales, setSales] = useState<any[]>([]);
     const [error, setError] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
     const [loading, setLoading] = useState(true);
 
     const typeLabels: Record<"sales" | "production", string> = { sales: "Vendas", production: "Produção" };
+    const isValidUnit = (u: any): u is Item["unit"] => ["kg", "g", "un", "L", "m"].includes(u);
 
-    useEffect(() => {
-        (async () => {
+    const mapSharedToGoalsItem = (it: SharedItem): GoalsItem => ({
+        id: it.id,
+        name: it.name,
+        farm: (it as any).farm ?? "",
+        quantity: it.quantity ?? 0,
+        unit: isValidUnit(it.unit) ? it.unit : "un",
+        category: (it as any).category ?? "",
+        minStock: (it as any).minStock ?? 0,
+        costPrice: (it as any).costPrice ?? 0,
+        lastUpdated: it.lastUpdated ?? new Date().toISOString(),
+    });
+
+    const subscribeData = useCallback(() => {
+        setLoading(true);
+
+        const unsubItems = subscribeItems((its) => {
+            setProducts(its.map(mapSharedToGoalsItem));
+        });
+
+        const unsubSales = subscribeSales((ss) => setSales(ss));
+        const unsubGoals = subscribeGoals(async (goalsSnap) => {
             try {
-                setLoading(true);
-                const [itemsData, goalsData] = await Promise.all([getItemsFromStorage(), fetchGoals()]);
-                setProducts(itemsData as unknown as Item[]);
-                const recalculated = await recalculateGoalsProgress(goalsData, {
-                    getSales: getSalesFromStorage,
-                    getItems: getItemsFromStorage,
+                const recalculated = await recalculateGoalsProgress(goalsSnap, {
+                    getSales: async () => sales,
+                    getItems: async () => products,
                 });
                 setGoals(recalculated);
-                setError("");
-            } catch (err: any) {
-                setError(err?.message ?? "Falha ao carregar dados.");
-            } finally {
-                setLoading(false);
+            } catch (e: any) {
+                setError(e.message ?? "Erro ao recalcular metas");
             }
-        })();
-    }, []);
+        });
+
+        setLoading(false);
+
+        return () => {
+            unsubItems();
+            unsubSales();
+            unsubGoals();
+        };
+    }, [products, sales]);
+
+    /** 🚀 Inicia as subscrições */
+    useEffect(() => {
+        const unsub = subscribeData();
+        return () => unsub?.();
+    }, [subscribeData]);
 
     const filteredGoals = useMemo(
         () => (selectedType === "all" ? goals : goals.filter((g) => g.type === selectedType)),
@@ -71,8 +102,8 @@ export default function GoalsScreen() {
 
             const fresh = await fetchGoals();
             const recalculated = await recalculateGoalsProgress(fresh, {
-                getSales: getSalesFromStorage,
-                getItems: getItemsFromStorage,
+                getSales: async () => sales,
+                getItems: async () => products,
             });
             setGoals(recalculated);
 
@@ -100,13 +131,8 @@ export default function GoalsScreen() {
 
     async function handleDelete(id: string) {
         try {
+            if (!id) throw new Error("ID da meta ausente");
             await deleteGoalFirestore(id);
-            const fresh = await fetchGoals();
-            const recalculated = await recalculateGoalsProgress(fresh, {
-                getSales: getSalesFromStorage,
-                getItems: getItemsFromStorage,
-            });
-            setGoals(recalculated);
         } catch (e: any) {
             setError(e?.message ?? "Erro ao excluir meta");
         }
@@ -126,7 +152,7 @@ export default function GoalsScreen() {
 
             <SummaryCards active={activeGoals} completed={completedGoals} overdue={overdueGoals} />
 
-            <View style={styles.controls}>
+            <View>
                 <TouchableOpacity
                     style={[styles.primaryBtn, styles.fullWidthBtn]}
                     onPress={() => {
@@ -192,16 +218,8 @@ export default function GoalsScreen() {
 const styles = StyleSheet.create({
     loading: { flex: 1, alignItems: "center", justifyContent: "center" },
     container: { padding: 16, gap: 12 },
-    filterRow: {
-        flexDirection: "row",
-        alignItems: "center",
-    },
-    filters: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 8,
-        paddingRight: 16,
-    },
+    filterRow: { flexDirection: "row", alignItems: "center" },
+    filters: { flexDirection: "row", alignItems: "center", gap: 8, paddingRight: 16 },
     primaryBtn: {
         flexDirection: "row",
         alignItems: "center",

@@ -14,6 +14,7 @@ export function ItemList({ items, onEdit, onDelete }: Props) {
     return (
         <FlatList
             data={items}
+            scrollEnabled={false}
             keyExtractor={(it, idx) => it.id ?? `item-${idx}`}
             contentContainerStyle={{ gap: 12 }}
             renderItem={({ item }) => {

@@ -1,3 +1,13 @@
+/******************************************************************************
+ *                                                                             *
+ * Creation Date : 08/10/2025                                                  *
+ *                                                                             *
+ * Property : (c) This program, code or item is the Intellectual Property of   *
+ * Evelyn Neves Barreto. Any use or copy of this code is prohibited without    *
+ * the express written authorization of Evelyn. All rights reserved.           *
+ *                                                                             *
+ ******************************************************************************/
+
 import { calcTotalQuantity, calcTotalRevenue } from "@/src/modules/sales/application/usecases/calcTotals";
 import { Goal } from "@/src/modules/sales/domain/entities/Goal";
 import { Item } from "@/src/modules/sales/domain/entities/Item";
@@ -5,21 +15,24 @@ import { Sale } from "@/src/modules/sales/domain/entities/Sale";
 import {
     addSaleToStorage,
     deleteSaleFromStorage,
-    getSalesFromStorage,
     updateSaleInStorage,
 } from "@/src/modules/sales/infrastructure/services/saleService";
 import { AlertMessage } from "@/src/modules/sales/presentation/components/AlertMessage";
 import { SaleFormModal } from "@/src/modules/sales/presentation/components/SaleFormModal";
 import { SalesList } from "@/src/modules/sales/presentation/components/SalesList";
 import { SummaryCards } from "@/src/modules/sales/presentation/components/SummaryCards";
-import { getGoalsFromStorage, getItemsFromStorage } from "@/src/modules/shared/goal/infrastructure/goalService";
+import type { Item as SharedItem } from "@/src/modules/shared/goal/domain/entities/Item";
+import type { Sale as SharedSale } from "@/src/modules/shared/goal/domain/entities/Sale";
+import { subscribeGoals, subscribeItems, subscribeSales } from "@/src/modules/shared/goal/infrastructure/goalService";
 import { Plus } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+
+type SaleWithGoalFlag = Sale & { hasRelatedGoal?: boolean };
 
 export default function SalesScreen() {
     const [products, setProducts] = useState<Item[]>([]);
-    const [sales, setSales] = useState<(Sale & { hasRelatedGoal?: boolean })[]>([]);
+    const [sales, setSales] = useState<SaleWithGoalFlag[]>([]);
     const [goals, setGoals] = useState<Goal[]>([]);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(true);
@@ -30,31 +43,36 @@ export default function SalesScreen() {
     const totalQty = calcTotalQuantity(sales);
 
     useEffect(() => {
-        (async () => {
-            try {
-                setLoading(true);
-                const [items, salesData, goalsData] = await Promise.all([
-                    getItemsFromStorage(),
-                    getSalesFromStorage(),
-                    getGoalsFromStorage(),
-                ]);
-
-                const salesWithFlag = salesData.map((sale) => ({
-                    ...sale,
-                    hasRelatedGoal: goalsData.some((goal) => goal.productId === sale.productId),
-                }));
-
-                setProducts(items as unknown as Item[]);
-                setGoals(goalsData as unknown as Goal[]);
-                setSales(salesWithFlag);
-                setError("");
-            } catch (err: any) {
-                setError(err?.message ?? "Falha ao carregar vendas.");
-            } finally {
-                setLoading(false);
-            }
-        })();
+        const unsubGoals = subscribeGoals(setGoals);
+        return () => unsubGoals?.();
     }, []);
+
+    useEffect(() => {
+        const unsubItems = subscribeItems((sharedItems: SharedItem[]) => {
+            setProducts(sharedItems.map((i) => ({ ...i })) as Item[]);
+        });
+        return () => unsubItems?.();
+    }, []);
+
+    useEffect(() => {
+        const unsubSales = subscribeSales((sharedSales: SharedSale[]) => {
+            const mappedSales: SaleWithGoalFlag[] = sharedSales.map((sale) => ({
+                id: sale.id,
+                productId: sale.productId,
+                productName: sale.productName,
+                farmName: sale.farm ?? "",
+                quantity: sale.quantity,
+                salePrice: sale.salePrice,
+                totalValue: sale.totalValue,
+                date: sale.date,
+                hasRelatedGoal: goals.some((g) => g.productId === sale.productId),
+            }));
+            setSales(mappedSales);
+            setLoading(false);
+        });
+
+        return () => unsubSales?.();
+    }, [goals]);
 
     const handleSaveSale = async (sale: Sale, isEdit: boolean) => {
         try {
@@ -104,7 +122,7 @@ export default function SalesScreen() {
     }
 
     return (
-        <View style={styles.container}>
+        <ScrollView contentContainerStyle={styles.container}>
             {!!error && <AlertMessage message={error} />}
 
             <SummaryCards totalRevenue={totalRevenue} totalQuantity={totalQty} totalSales={sales.length} />
@@ -120,6 +138,7 @@ export default function SalesScreen() {
                     <Plus size={16} color="#FFF" />
                     <Text style={styles.primaryBtnTxt}>Registrar Venda</Text>
                 </Pressable>
+
                 <View style={styles.headerText}>
                     <Text style={styles.h2}>Vendas Registradas</Text>
                     <Text style={styles.sub}>Histórico de vendas realizadas</Text>
@@ -142,18 +161,13 @@ export default function SalesScreen() {
                 onSave={handleSaveSale}
                 editingSale={editingSale}
             />
-        </View>
+        </ScrollView>
     );
 }
 
 const styles = StyleSheet.create({
     loading: { flex: 1, alignItems: "center", justifyContent: "center" },
-    container: {
-        padding: 16,
-        gap: 24,
-        backgroundColor: "#F9FAFB",
-        flexGrow: 1,
-    },
+    container: { padding: 16, gap: 24, backgroundColor: "#F9FAFB", flexGrow: 1 },
     section: { gap: 12 },
     headerText: { gap: 2, marginBottom: -10 },
     h2: { fontSize: 20, fontWeight: "700", color: "#111827" },
