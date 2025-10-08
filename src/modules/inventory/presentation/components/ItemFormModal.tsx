@@ -349,7 +349,6 @@ const styles = StyleSheet.create({
     btnSecondaryTxt: { color: "#111827", fontWeight: "700" },
     btnLarge: { alignSelf: "flex-start", paddingHorizontal: 16 },
 
-    // picker
     pOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.35)", alignItems: "center", justifyContent: "center" },
     pContainer: { backgroundColor: "#FFF", width: "90%", maxWidth: 360, borderRadius: 10, padding: 12 },
     pItem: { paddingVertical: 12, paddingHorizontal: 8 },

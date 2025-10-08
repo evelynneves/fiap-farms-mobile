@@ -34,23 +34,28 @@ const AccountCard: React.FC = () => {
             </Text>
             <Text style={styles.subtitle}>Configurações de segurança e conta</Text>
 
-            {/* Reset password */}
+            {/* Redefinir senha */}
             <View style={styles.section}>
                 <View style={styles.leftRow}>
                     <Lock size={20} color="#6b7280" />
-                    <View>
+                    <View style={{ flex: 1 }}>
                         <Text style={styles.h3}>Redefinir Senha</Text>
                         <Text style={styles.muted}>Altere sua senha de acesso</Text>
                     </View>
                 </View>
-                <TouchableOpacity style={styles.btnOutline} onPress={() => alert("Redefinir senha em breve!")}>
+
+                {/* Botão full width */}
+                <TouchableOpacity
+                    style={[styles.fullBtn, styles.btnOutline]}
+                    onPress={() => alert("Redefinir senha em breve!")}
+                >
                     <Text style={styles.btnOutlineTxt}>Redefinir</Text>
                 </TouchableOpacity>
             </View>
 
             <View style={styles.hr} />
 
-            {/* Notification toggles */}
+            {/* Configurações de notificações */}
             <View style={{ gap: 8 }}>
                 <Text style={styles.h3Row}>
                     <Bell size={18} color="#16a34a" /> Configurações de Notificações
@@ -67,7 +72,6 @@ const AccountCard: React.FC = () => {
                         title: "Notificações de Metas",
                         desc: "Alertas quando metas forem atingidas",
                     },
-                    // você pode habilitar "production" aqui se quiser expor no UI
                 ].map(({ key, title, desc }) => (
                     <View key={key} style={styles.toggleRow}>
                         <View style={{ flex: 1 }}>
@@ -86,16 +90,21 @@ const AccountCard: React.FC = () => {
 
             <View style={styles.hr} />
 
-            {/* Delete account */}
-            <View style={styles.deleteRow}>
+            {/* Excluir conta */}
+            <View style={styles.deleteSection}>
                 <View style={styles.leftRow}>
                     <Trash2 size={20} color="#dc2626" />
-                    <View>
+                    <View style={{ flex: 1 }}>
                         <Text style={[styles.h3, { color: "#b91c1c" }]}>Excluir Conta</Text>
                         <Text style={[styles.muted, { color: "#dc2626" }]}>Esta ação não pode ser desfeita</Text>
                     </View>
                 </View>
-                <TouchableOpacity style={styles.btnDanger} onPress={() => alert("Excluir conta em breve!")}>
+
+                {/* Botão full width */}
+                <TouchableOpacity
+                    style={[styles.fullBtn, styles.btnDanger]}
+                    onPress={() => alert("Excluir conta em breve!")}
+                >
                     <Text style={styles.btnDangerTxt}>Excluir</Text>
                 </TouchableOpacity>
             </View>
@@ -106,44 +115,72 @@ const AccountCard: React.FC = () => {
 export default AccountCard;
 
 const styles = StyleSheet.create({
-    card: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 8, padding: 16 },
+    card: {
+        backgroundColor: "#fff",
+        borderWidth: 1,
+        borderColor: "#E5E7EB",
+        borderRadius: 8,
+        padding: 16,
+    },
     title: { fontSize: 16, fontWeight: "700", color: "#111827", marginBottom: 6 },
     subtitle: { color: "#6b7280", marginBottom: 16 },
+
     section: {
         backgroundColor: "#f9fafb",
         padding: 12,
         borderRadius: 8,
         borderWidth: 0,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
     },
-    leftRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-    h3: { fontSize: 15, fontWeight: "700", color: "#111827" },
-    h3Row: { fontSize: 15, fontWeight: "700", color: "#111827", flexDirection: "row" } as any,
-    muted: { color: "#6b7280", fontSize: 13 },
-    btnOutline: {
-        paddingVertical: 8,
-        paddingHorizontal: 14,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: "#d1d5db",
-        backgroundColor: "#fff",
-    },
-    btnOutlineTxt: { color: "#000", fontWeight: "700" },
-    hr: { height: 1, backgroundColor: "#E5E7EB", marginVertical: 14 },
-    toggleRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 6 },
-    toggleTitle: { fontSize: 14, fontWeight: "700", color: "#111827" },
-    deleteRow: {
+
+    deleteSection: {
         backgroundColor: "#FEF2F2",
         borderWidth: 1,
         borderColor: "#FECACA",
         borderRadius: 8,
         padding: 12,
+    },
+
+    leftRow: {
         flexDirection: "row",
         alignItems: "center",
-        justifyContent: "space-between",
+        gap: 10,
+        marginBottom: 10,
     },
-    btnDanger: { backgroundColor: "#dc2626", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8 },
-    btnDangerTxt: { color: "#fff", fontWeight: "700" },
+
+    h3: { fontSize: 15, fontWeight: "700", color: "#111827" },
+    h3Row: {
+        fontSize: 15,
+        fontWeight: "700",
+        color: "#111827",
+        flexDirection: "row",
+    } as any,
+    muted: { color: "#6b7280", fontSize: 13 },
+
+    hr: { height: 1, backgroundColor: "#E5E7EB", marginVertical: 14 },
+
+    toggleRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 6 },
+    toggleTitle: { fontSize: 14, fontWeight: "700", color: "#111827" },
+
+    fullBtn: {
+        width: "100%",
+        marginTop: 4,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+
+    btnOutline: {
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: "#d1d5db",
+        backgroundColor: "#fff",
+        paddingVertical: 10,
+    },
+    btnOutlineTxt: { color: "#111827", fontWeight: "700", fontSize: 14 },
+
+    btnDanger: {
+        backgroundColor: "#dc2626",
+        borderRadius: 8,
+        paddingVertical: 10,
+    },
+    btnDangerTxt: { color: "#fff", fontWeight: "700", fontSize: 14 },
 });

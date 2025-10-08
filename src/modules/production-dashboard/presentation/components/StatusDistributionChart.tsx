@@ -14,9 +14,9 @@ const COLORS = {
 export function StatusDistributionChart({ productions }: Props) {
     const counts = useMemo(() => {
         const total = productions.length || 1;
-        const waiting = productions.filter((p: any) => p.productionStage === "waiting").length;
-        const prod = productions.filter((p: any) => p.productionStage === "production").length;
-        const harv = productions.filter((p: any) => p.productionStage === "harvested").length;
+        const waiting = productions.filter((p) => p.productionStage === "waiting").length;
+        const prod = productions.filter((p) => p.productionStage === "production").length;
+        const harv = productions.filter((p) => p.productionStage === "harvested").length;
         return { total, waiting, prod, harv };
     }, [productions]);
 
@@ -26,7 +26,6 @@ export function StatusDistributionChart({ productions }: Props) {
         { key: "Colhido", value: counts.harv, color: COLORS.harvested },
     ].filter((d) => d.value > 0);
 
-    // Simple donut using arcs
     const size = 220;
     const r = 90;
     const cx = size / 2;
@@ -49,7 +48,7 @@ export function StatusDistributionChart({ productions }: Props) {
                 <Text style={styles.sub}>Percentual de produtos em cada status</Text>
             </View>
 
-            <View style={styles.chartRow}>
+            <View style={styles.chartWrap}>
                 <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
                     <G>
                         <Circle cx={cx} cy={cy} r={r} fill="#F3F4F6" />
@@ -60,6 +59,7 @@ export function StatusDistributionChart({ productions }: Props) {
                     </G>
                 </Svg>
 
+                {/* Legenda abaixo do gráfico */}
                 <View style={styles.legend}>
                     {data.map((d) => {
                         const pct = counts.total ? ((d.value / counts.total) * 100).toFixed(1) : "0.0";
@@ -95,14 +95,29 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         padding: 16,
         gap: 12,
+        alignItems: "center",
     },
-    header: { gap: 4 },
+    header: { gap: 4, alignItems: "center" },
     h2: { fontSize: 18, fontWeight: "700", color: "#111827" },
     sub: { fontSize: 13, color: "#6B7280" },
 
-    chartRow: { flexDirection: "row", gap: 16, alignItems: "center", justifyContent: "space-between" },
-    legend: { gap: 8, flex: 1 },
-    legendRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-    legendTxt: { color: "#111827" },
+    chartWrap: {
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 12,
+    },
+    legend: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        justifyContent: "center",
+        gap: 12,
+        marginTop: 8,
+    },
+    legendRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+    },
+    legendTxt: { color: "#111827", fontSize: 13 },
     swatch: { width: 14, height: 14, borderRadius: 4 },
 });

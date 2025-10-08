@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     btnText: {
         fontWeight: "600",
         color: "#374151",
-        fontSize: 13,
+        fontSize: 12,
     },
     empty: {
         textAlign: "center",

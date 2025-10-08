@@ -28,7 +28,6 @@ export type Notification = {
 export async function addNotification(notification: Omit<Notification, "id" | "timestamp" | "read">): Promise<void> {
     const user = auth.currentUser;
     if (!user) {
-        // Em mobile, o estado de auth pode demorar a hidratar (AsyncStorage → Firebase)
         console.warn("addNotification: usuário não autenticado.");
         return;
     }

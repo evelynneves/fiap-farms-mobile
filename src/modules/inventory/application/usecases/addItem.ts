@@ -1,7 +1,6 @@
 import { Item } from "../../domain/entities/Item";
 import { addItemInStorage } from "../../infrastructure/services/itemService";
 
-// Normaliza nome para comparação (sem espaços extras e case-insensitive)
 const norm = (s: string) => s.trim().toLowerCase();
 
 /**

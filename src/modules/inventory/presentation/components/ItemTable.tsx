@@ -1,4 +1,4 @@
-import { Edit, Trash2 } from "lucide-react-native";
+import { DollarSign, Edit, Layers, MapPin, Package, Trash2 } from "lucide-react-native";
 import React from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { Item } from "../../domain/entities/Item";
@@ -12,157 +12,183 @@ type Props = {
 
 export function ItemList({ items, onEdit, onDelete }: Props) {
     return (
-        <View style={styles.wrapper}>
-            <View style={styles.headerRow}>
-                <Text style={[styles.hCell, styles.flex2]}>Item</Text>
-                <Text style={styles.hCell}>Categoria</Text>
-                <Text style={styles.hCell}>Fazenda</Text>
-                <Text style={[styles.hCell, styles.rightText]}>Qtd</Text>
-                <Text style={[styles.hCell, styles.rightText]}>Est. mín.</Text>
-                <Text style={[styles.hCell, styles.rightText]}>Custo</Text>
-                <Text style={[styles.hCell, styles.centerText]}>Status</Text>
-                <Text style={[styles.hCell, styles.centerText]}>Ações</Text>
-            </View>
+        <FlatList
+            data={items}
+            keyExtractor={(it, idx) => it.id ?? `item-${idx}`}
+            contentContainerStyle={{ gap: 12 }}
+            renderItem={({ item }) => {
+                const s = getStockStatus(item);
+                const tone = s.status;
 
-            <FlatList
-                data={items}
-                keyExtractor={(it, idx) => it.id ?? `item-${idx}`} // ✅ fallback
-                ItemSeparatorComponent={() => <View style={styles.sep} />}
-                renderItem={({ item }) => {
-                    const s = getStockStatus(item);
-                    const statusTone =
-                        s.className === "status--low"
-                            ? "status--low"
-                            : s.className === "status--warning"
-                            ? "status--warning"
-                            : s.className === "status--ok"
-                            ? "status--ok"
-                            : undefined;
-
-                    return (
-                        <View style={styles.row}>
-                            <Text style={[styles.cellText, styles.flex2]}>{item.name}</Text>
-
-                            {/* Não envolva Badge (View) dentro de Text */}
-                            <View style={styles.cellBox}>
-                                <Badge>{item.category}</Badge>
+                return (
+                    <View style={styles.card}>
+                        <View style={styles.cardHeader}>
+                            <View style={styles.titleWrap}>
+                                <Package size={16} color="#16A34A" />
+                                <Text style={styles.title}>{item.name}</Text>
                             </View>
 
-                            <Text style={styles.cellText}>{item.farm}</Text>
-
-                            <Text style={[styles.cellText, styles.rightText]}>
-                                {item.quantity} {item.unit}
-                            </Text>
-
-                            <Text style={[styles.cellText, styles.rightText]}>
-                                {item.minStock} {item.unit}
-                            </Text>
-
-                            <Text style={[styles.cellText, styles.rightText]}>R$ {item.costPrice.toFixed(2)}</Text>
-
-                            <View style={[styles.cellBox, styles.centerBox]}>
-                                <Badge tone={statusTone as any}>{s.label}</Badge>
-                            </View>
-
-                            <View style={[styles.cellBox, styles.centerBox]}>
-                                <View style={styles.actions}>
-                                    <Pressable onPress={() => onEdit(item)} style={styles.actionBtn}>
-                                        <Edit size={16} color="#111827" />
-                                    </Pressable>
-
-                                    {item.hasRelatedGoal ? (
-                                        <View style={[styles.actionBtn, styles.disabled]}>
-                                            <Trash2 size={16} color="#DC2626" />
-                                        </View>
-                                    ) : (
-                                        <Pressable
-                                            disabled={!item.id}
-                                            onPress={() => item.id && onDelete(item.id)} // ✅ só chama se tiver id
-                                            style={[styles.actionBtn, !item.id && styles.disabled]}
-                                        >
-                                            <Trash2 size={16} color="#DC2626" />
-                                        </Pressable>
-                                    )}
-                                </View>
+                            <View style={styles.badgesWrap}>
+                                <Badge tone={tone}>{s.label}</Badge>
+                                {item.hasRelatedGoal && <Badge tone="goal">Meta Vinculada</Badge>}
                             </View>
                         </View>
-                    );
-                }}
-            />
-        </View>
+
+                        <View style={styles.infoGroup}>
+                            <View style={styles.infoRow}>
+                                <Layers size={14} color="#6B7280" />
+                                <Text style={styles.infoTxt}>{item.category}</Text>
+                            </View>
+
+                            <View style={styles.infoRow}>
+                                <MapPin size={14} color="#6B7280" />
+                                <Text style={styles.infoTxt}>{item.farm}</Text>
+                            </View>
+
+                            <View style={styles.infoRow}>
+                                <Text style={styles.infoLabel}>Quantidade:</Text>
+                                <Text style={styles.infoValue}>
+                                    {item.quantity} {item.unit}
+                                </Text>
+                            </View>
+
+                            <View style={styles.infoRow}>
+                                <Text style={styles.infoLabel}>Estoque mínimo:</Text>
+                                <Text style={styles.infoValue}>
+                                    {item.minStock} {item.unit}
+                                </Text>
+                            </View>
+
+                            <View style={styles.infoRow}>
+                                <DollarSign size={14} color="#6B7280" />
+                                <Text style={styles.infoValue}>R$ {item.costPrice.toFixed(2)}</Text>
+                            </View>
+                        </View>
+
+                        <View style={styles.actions}>
+                            <Pressable
+                                onPress={() => onEdit(item)}
+                                style={[styles.btn, styles.btnSecondary]}
+                                accessibilityLabel="Editar item"
+                            >
+                                <Edit size={16} color="#111827" />
+                                <Text style={styles.btnTxt}>Editar</Text>
+                            </Pressable>
+
+                            <Pressable
+                                disabled={!!item.hasRelatedGoal}
+                                onPress={() => item.id && onDelete(item.id)}
+                                style={[styles.btn, styles.btnDanger, item.hasRelatedGoal && styles.btnDisabled]}
+                                accessibilityLabel="Excluir item"
+                            >
+                                <Trash2 size={16} color="#DC2626" />
+                                <Text style={[styles.btnTxt, { color: "#DC2626" }]}>Excluir</Text>
+                            </Pressable>
+                        </View>
+                    </View>
+                );
+            }}
+            ListEmptyComponent={<Text style={styles.empty}>Nenhum item encontrado no estoque.</Text>}
+        />
     );
 }
 
-function Badge({
-    children,
-    tone,
-}: {
-    children: React.ReactNode;
-    tone?: "status--low" | "status--warning" | "status--ok";
-}) {
+function Badge({ children, tone }: { children: React.ReactNode; tone?: "low" | "warning" | "normal" | "goal" }) {
+    let backgroundColor = "#E5E7EB";
+    let textColor = "#111827";
+
+    switch (tone) {
+        case "low":
+            backgroundColor = "#FEE2E2";
+            textColor = "#991B1B";
+            break;
+        case "warning":
+            backgroundColor = "#FEF9C3";
+            textColor = "#92400E";
+            break;
+        case "normal":
+            backgroundColor = "#DCFCE7";
+            textColor = "#166534";
+            break;
+        case "goal":
+            backgroundColor = "#FDE68A";
+            textColor = "#92400E";
+            break;
+    }
+
     return (
-        <View
-            style={[
-                bStyles.badge,
-                tone === "status--low" && bStyles.low,
-                tone === "status--warning" && bStyles.warn,
-                tone === "status--ok" && bStyles.ok,
-            ]}
-        >
-            <Text style={bStyles.badgeTxt}>{children}</Text>
+        <View style={[bStyles.badge, { backgroundColor }]}>
+            <Text style={[bStyles.badgeTxt, { color: textColor }]}>{children}</Text>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    wrapper: {
+    card: {
+        backgroundColor: "#FFF",
         borderWidth: 1,
         borderColor: "#E5E7EB",
-        borderRadius: 8,
-        backgroundColor: "#FFF",
-        overflow: "hidden",
+        borderRadius: 12,
+        padding: 16,
+        shadowColor: "#000",
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
-    headerRow: {
-        backgroundColor: "#F9FAFB",
+    cardHeader: {
         flexDirection: "row",
-        paddingVertical: 10,
-        paddingHorizontal: 12,
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 10,
     },
-    hCell: { flex: 1, fontSize: 12, fontWeight: "700", color: "#4B5563" },
-    flex2: { flex: 2 },
-
-    // Text vs View alignment styles
-    rightText: { textAlign: "right" as const },
-    centerText: { textAlign: "center" as const },
-    centerBox: { alignItems: "center" as const },
-
-    row: {
+    titleWrap: { flexDirection: "row", alignItems: "center", gap: 6 },
+    title: { fontSize: 16, fontWeight: "700", color: "#111827" },
+    badgesWrap: {
+        flexDirection: "column",
+        alignItems: "flex-end",
+        gap: 4,
+    },
+    infoGroup: { gap: 6, marginTop: 4, marginBottom: 12 },
+    infoRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+    infoTxt: { color: "#374151", fontSize: 14 },
+    infoLabel: { color: "#6B7280", fontSize: 13 },
+    infoValue: { color: "#111827", fontWeight: "600" },
+    actions: {
+        flexDirection: "row",
+        justifyContent: "flex-end",
+        gap: 10,
+        marginTop: 8,
+    },
+    btn: {
         flexDirection: "row",
         alignItems: "center",
-        paddingHorizontal: 12,
-        paddingVertical: 12,
+        gap: 6,
+        paddingVertical: 8,
+        paddingHorizontal: 14,
+        borderRadius: 8,
+        borderWidth: 1,
     },
-    sep: { height: 1, backgroundColor: "#E5E7EB" },
-
-    // separe estilos de Text e View
-    cellText: { flex: 1, color: "#374151", fontSize: 13 },
-    cellBox: { flex: 1 },
-
-    actions: { flexDirection: "row", gap: 8, justifyContent: "center" },
-    actionBtn: { padding: 6 },
-    disabled: { opacity: 0.5 },
+    btnTxt: { fontWeight: "600", fontSize: 12 },
+    btnSecondary: { borderColor: "#D1D5DB", backgroundColor: "#FFF" },
+    btnDanger: { borderColor: "#FECACA", backgroundColor: "#FFF5F5" },
+    btnDisabled: { opacity: 0.6 },
+    empty: {
+        textAlign: "center",
+        padding: 20,
+        color: "#6B7280",
+        fontStyle: "italic",
+    },
 });
 
 const bStyles = StyleSheet.create({
     badge: {
-        backgroundColor: "#F3F4F6",
         borderRadius: 999,
         paddingHorizontal: 8,
-        paddingVertical: 2,
+        paddingVertical: 3,
         alignSelf: "flex-start",
     },
-    badgeTxt: { fontSize: 12, color: "#374151", fontWeight: "600" },
-    low: { backgroundColor: "#FEE2E2" },
-    warn: { backgroundColor: "#FEF9C3" },
-    ok: { backgroundColor: "#DCFCE7" },
+    badgeTxt: {
+        fontSize: 12,
+        fontWeight: "700",
+    },
 });

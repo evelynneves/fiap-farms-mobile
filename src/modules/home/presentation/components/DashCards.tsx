@@ -9,8 +9,7 @@ export type HomeCard = {
     icon: React.ReactNode;
     title: string;
     description: string;
-    /** opcional: cor de fundo da pastilha do ícone */
-    tint?: string; // ex: "#EAF7F0"
+    tint?: string;
 };
 
 export function DashCards({ cards }: { cards: HomeCard[] }) {
@@ -55,7 +54,6 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         gap: 12,
-        // sombra sutil
         shadowColor: "#000",
         shadowOpacity: 0.05,
         shadowRadius: 6,

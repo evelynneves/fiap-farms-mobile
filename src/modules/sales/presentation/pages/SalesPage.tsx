@@ -23,7 +23,6 @@ export default function SalesScreen() {
     const [goals, setGoals] = useState<Goal[]>([]);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(true);
-
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingSale, setEditingSale] = useState<Sale | null>(null);
 
@@ -110,22 +109,21 @@ export default function SalesScreen() {
 
             <SummaryCards totalRevenue={totalRevenue} totalQuantity={totalQty} totalSales={sales.length} />
 
-            <View style={styles.header}>
-                <View>
-                    <Text style={styles.h2}>Vendas Registradas</Text>
-                    <Text style={styles.sub}>Histórico de vendas realizadas</Text>
-                </View>
-
+            <View style={styles.section}>
                 <Pressable
-                    style={styles.primaryBtn}
+                    style={[styles.primaryBtn, styles.fullWidthBtn]}
                     onPress={() => {
                         setEditingSale(null);
                         setIsModalOpen(true);
                     }}
                 >
-                    <Plus size={16} color="#fff" />
+                    <Plus size={16} color="#FFF" />
                     <Text style={styles.primaryBtnTxt}>Registrar Venda</Text>
                 </Pressable>
+                <View style={styles.headerText}>
+                    <Text style={styles.h2}>Vendas Registradas</Text>
+                    <Text style={styles.sub}>Histórico de vendas realizadas</Text>
+                </View>
             </View>
 
             <SalesList
@@ -150,26 +148,40 @@ export default function SalesScreen() {
 
 const styles = StyleSheet.create({
     loading: { flex: 1, alignItems: "center", justifyContent: "center" },
-    container: { padding: 16, gap: 16, backgroundColor: "#F9FAFB", flexGrow: 1 },
-
-    header: {
-        marginVertical: 12,
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        gap: 12,
+    container: {
+        padding: 16,
+        gap: 24,
+        backgroundColor: "#F9FAFB",
+        flexGrow: 1,
     },
-    h2: { fontSize: 18, fontWeight: "700", color: "#111827" },
-    sub: { color: "#6B7280", fontSize: 13 },
-
+    section: { gap: 12 },
+    headerText: { gap: 2, marginBottom: -10 },
+    h2: { fontSize: 20, fontWeight: "700", color: "#111827" },
+    sub: { fontSize: 13, color: "#6B7280" },
     primaryBtn: {
         flexDirection: "row",
         alignItems: "center",
+        justifyContent: "center",
         gap: 8,
-        backgroundColor: "#10B981",
-        paddingHorizontal: 14,
-        paddingVertical: 10,
-        borderRadius: 8,
+        backgroundColor: "#16A34A",
+        paddingHorizontal: 18,
+        paddingVertical: 12,
+        borderRadius: 10,
+        shadowColor: "#16A34A",
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3,
+        marginBottom: 10,
     },
-    primaryBtnTxt: { color: "#fff", fontWeight: "700" },
+    primaryBtnTxt: {
+        color: "#FFF",
+        fontWeight: "700",
+        fontSize: 15,
+        letterSpacing: 0.3,
+    },
+    fullWidthBtn: {
+        width: "100%",
+        alignSelf: "center",
+        marginTop: 6,
+    },
 });

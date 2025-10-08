@@ -123,18 +123,35 @@ export default function InventoryScreen() {
             {!!error && <AlertMessage message={error} />}
 
             <SummaryCards totalItems={items.length} lowStockCount={lowStockItems.length} totalValue={totalValue} />
-
+            <Pressable
+                onPress={() => {
+                    setEditingItem(null);
+                    setIsModalOpen(true);
+                }}
+                style={[styles.btn, styles.btnPrimary, styles.fullWidthBtn]}
+            >
+                <Text style={styles.btnPrimaryTxt}>+ Adicionar Item</Text>
+            </Pressable>
             <View style={styles.controls}>
-                <FilterButtons categories={categories} selected={selectedCategory} onSelect={setSelectedCategory} />
-                <Pressable
-                    onPress={() => {
-                        setEditingItem(null);
-                        setIsModalOpen(true);
-                    }}
-                    style={[styles.btn, styles.btnPrimary]}
-                >
-                    <Text style={styles.btnPrimaryTxt}>+ Adicionar Item</Text>
-                </Pressable>
+                <View style={styles.filterRow}>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.filters}
+                    >
+                        <FilterButtons
+                            categories={categories}
+                            selected={selectedCategory}
+                            onSelect={setSelectedCategory}
+                        />
+                    </ScrollView>
+
+                    {categories.length > 3 && (
+                        <View style={styles.scrollHint}>
+                            <Text style={styles.scrollHintTxt}>›</Text>
+                        </View>
+                    )}
+                </View>
             </View>
 
             <ItemList
@@ -177,17 +194,36 @@ export default function InventoryScreen() {
 const styles = StyleSheet.create({
     loading: { flex: 1, alignItems: "center", justifyContent: "center" },
     container: { padding: 16, gap: 12 },
-    controls: {
-        flexDirection: "row",
+    filterRow: { flexDirection: "row", alignItems: "center" },
+    filters: { flexDirection: "row", alignItems: "center", gap: 8, paddingRight: 16 },
+    scrollHint: {
+        backgroundColor: "#E5E7EB",
+        width: 24,
+        height: 24,
+        borderRadius: 6,
+        justifyContent: "center",
         alignItems: "center",
-        justifyContent: "space-between",
-        gap: 12,
+        marginLeft: -6,
     },
-    btn: {
-        paddingHorizontal: 14,
-        paddingVertical: 10,
-        borderRadius: 8,
+    scrollHintTxt: { fontSize: 18, color: "#4B5563", fontWeight: "700", marginTop: -2 },
+    btn: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: 10, marginBottom: 20 },
+    btnPrimary: {
+        backgroundColor: "#16A34A",
+        shadowColor: "#16A34A",
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3,
     },
-    btnPrimary: { backgroundColor: "#16A34A" },
-    btnPrimaryTxt: { color: "#FFF", fontWeight: "700" },
+    btnPrimaryTxt: {
+        color: "#FFF",
+        fontWeight: "700",
+        textAlign: "center",
+        fontSize: 15,
+        letterSpacing: 0.3,
+    },
+    fullWidthBtn: {
+        width: "100%",
+        alignSelf: "center",
+        marginTop: 6,
+    },
 });

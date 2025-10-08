@@ -17,7 +17,7 @@ const STATUS_COLORS = {
 };
 
 export function GoalCard({ goal, onEdit, onDelete }: Props) {
-    const status = getGoalStatus(goal); // { status, label }
+    const status = getGoalStatus(goal);
     const progress = Math.min((goal.current / goal.target) * 100, 100);
     const sc = STATUS_COLORS[status.status];
 
@@ -110,13 +110,13 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: "center",
         justifyContent: "center",
-        paddingVertical: 12,
+        paddingVertical: 6,
         borderRadius: 8,
         borderWidth: 1,
         borderColor: "#E5E7EB",
         backgroundColor: "#FFF",
     },
-    actionTxt: { color: "#111827", fontWeight: "700" },
+    actionTxt: { color: "#111827", fontWeight: "700", fontSize: 12 },
     actionDanger: { borderColor: "#FECACA", backgroundColor: "#FEF2F2" },
     actionDangerTxt: { color: "#B91C1C" },
 });

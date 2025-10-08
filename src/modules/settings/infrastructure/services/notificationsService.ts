@@ -31,7 +31,6 @@ const DEFAULT_CONFIG: NotificationsConfig = {
 export async function getNotifications(): Promise<NotificationsConfig> {
     const user = auth.currentUser;
     if (!user) {
-        // Em mobile o auth pode demorar a hidratar; devolvemos defaults para evitar travar a UI.
         return DEFAULT_CONFIG;
     }
 

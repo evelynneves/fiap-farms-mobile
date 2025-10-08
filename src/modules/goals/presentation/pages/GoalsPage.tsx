@@ -127,9 +127,8 @@ export default function GoalsScreen() {
             <SummaryCards active={activeGoals} completed={completedGoals} overdue={overdueGoals} />
 
             <View style={styles.controls}>
-                <FilterButtons selected={selectedType} onSelect={setSelectedType} />
                 <TouchableOpacity
-                    style={styles.primaryBtn}
+                    style={[styles.primaryBtn, styles.fullWidthBtn]}
                     onPress={() => {
                         setEditingGoal(null);
                         setIsModalOpen(true);
@@ -138,6 +137,15 @@ export default function GoalsScreen() {
                     <Plus size={16} color="#FFF" />
                     <Text style={styles.primaryBtnTxt}>Nova Meta</Text>
                 </TouchableOpacity>
+                <View style={styles.filterRow}>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.filters}
+                    >
+                        <FilterButtons selected={selectedType} onSelect={setSelectedType} />
+                    </ScrollView>
+                </View>
             </View>
 
             <View style={styles.grid}>
@@ -184,16 +192,41 @@ export default function GoalsScreen() {
 const styles = StyleSheet.create({
     loading: { flex: 1, alignItems: "center", justifyContent: "center" },
     container: { padding: 16, gap: 12 },
-    controls: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginVertical: 12 },
-    primaryBtn: {
+    filterRow: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    filters: {
         flexDirection: "row",
         alignItems: "center",
         gap: 8,
-        backgroundColor: "#16A34A",
-        paddingHorizontal: 14,
-        paddingVertical: 10,
-        borderRadius: 10,
+        paddingRight: 16,
     },
-    primaryBtnTxt: { color: "#FFF", fontWeight: "800" },
+    primaryBtn: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+        backgroundColor: "#16A34A",
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderRadius: 10,
+        shadowColor: "#16A34A",
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3,
+        marginBottom: 20,
+    },
+    primaryBtnTxt: {
+        color: "#FFF",
+        fontWeight: "700",
+        fontSize: 15,
+        letterSpacing: 0.3,
+    },
+    fullWidthBtn: {
+        width: "100%",
+        alignSelf: "center",
+        marginTop: 6,
+    },
     grid: { gap: 12 },
 });

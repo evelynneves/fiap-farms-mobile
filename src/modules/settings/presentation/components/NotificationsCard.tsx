@@ -19,7 +19,6 @@ import {
     markNotificationAsRead,
 } from "../../infrastructure/services/notificationsService";
 
-// ==== Tipos ====
 type NotificationType = "success" | "warning" | "info";
 type NotificationCategory = "stock" | "goals" | "production";
 
@@ -56,7 +55,6 @@ export default function NotificationsDropdown() {
         return () => unsub();
     }, []);
 
-    // Ações
     async function onMarkAll() {
         const ids = list.filter((n) => !n.read).map((n) => n.id);
         if (ids.length) await markAllNotificationsAsRead(ids);
@@ -70,7 +68,6 @@ export default function NotificationsDropdown() {
         await deleteNotification(id);
     }
 
-    // Helpers de render
     function formatTimestamp(ts?: NotificationDoc["timestamp"]) {
         if (!ts) return "";
         const date =
@@ -81,7 +78,6 @@ export default function NotificationsDropdown() {
                 : ts;
 
         if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
-        // RN atual suporta Intl via Hermes; se preferir, troque por outro formatter
         return date.toLocaleString("pt-BR");
     }
 
@@ -184,7 +180,6 @@ export default function NotificationsDropdown() {
     );
 }
 
-// ---------- helpers ----------
 function mapDocToNotification(doc: QueryDocumentSnapshot<DocumentData>): Notification {
     const data = doc.data() as NotificationDoc;
     return {
@@ -198,7 +193,6 @@ function mapDocToNotification(doc: QueryDocumentSnapshot<DocumentData>): Notific
     };
 }
 
-// ==== estilos RN (substituem o SCSS) ====
 const styles = StyleSheet.create({
     iconBtn: { padding: 10 },
     badge: {

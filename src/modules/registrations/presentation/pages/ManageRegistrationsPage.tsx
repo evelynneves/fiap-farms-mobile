@@ -25,11 +25,8 @@ export default function ManageRegistrationsScreen() {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(true);
 
-    // Farm modal
     const [isFarmModalOpen, setIsFarmModalOpen] = useState(false);
     const [editingFarm, setEditingFarm] = useState<Farm | null>(null);
-
-    // Category modal
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
@@ -51,13 +48,8 @@ export default function ManageRegistrationsScreen() {
 
     const handleSaveFarm = async (farm: Farm, isEdit: boolean) => {
         try {
-            if (isEdit) {
-                const updated = await updateFarm(farms, farm);
-                setFarms(updated);
-            } else {
-                const added = await addFarm(farms, farm);
-                setFarms(added);
-            }
+            const updated = isEdit ? await updateFarm(farms, farm) : await addFarm(farms, farm);
+            setFarms(updated);
             setError("");
         } catch (err: any) {
             setError(err?.message ?? "Erro ao salvar fazenda.");
@@ -66,13 +58,10 @@ export default function ManageRegistrationsScreen() {
 
     const handleSaveCategory = async (category: Category, isEdit: boolean) => {
         try {
-            if (isEdit) {
-                const updated = await updateCategory(categories, category);
-                setCategories(updated);
-            } else {
-                const added = await addCategory(categories, category);
-                setCategories(added);
-            }
+            const updated = isEdit
+                ? await updateCategory(categories, category)
+                : await addCategory(categories, category);
+            setCategories(updated);
             setError("");
         } catch (err: any) {
             setError(err?.message ?? "Erro ao salvar categoria.");
@@ -93,27 +82,22 @@ export default function ManageRegistrationsScreen() {
 
             <Tabs active={activeTab} onChange={setActiveTab} />
 
-            {/* FARMS */}
             {activeTab === "farms" && (
                 <View style={styles.section}>
-                    <View style={styles.sectionHeader}>
-                        <View style={styles.headerText}>
-                            <Text style={styles.h2}>Fazendas Cadastradas</Text>
-                            <Text style={styles.sub}>Gerencie as fazendas da cooperativa</Text>
-                        </View>
-
-                        <Pressable
-                            style={styles.primaryBtn}
-                            onPress={() => {
-                                setEditingFarm(null);
-                                setIsFarmModalOpen(true);
-                            }}
-                        >
-                            <Plus size={16} color="#FFF" />
-                            <Text style={styles.primaryBtnTxt}>Nova Fazenda</Text>
-                        </Pressable>
+                    <Pressable
+                        style={[styles.primaryBtn, styles.fullWidthBtn]}
+                        onPress={() => {
+                            setEditingFarm(null);
+                            setIsFarmModalOpen(true);
+                        }}
+                    >
+                        <Plus size={16} color="#FFF" />
+                        <Text style={styles.primaryBtnTxt}>Nova Fazenda</Text>
+                    </Pressable>
+                    <View style={styles.headerText}>
+                        <Text style={styles.h2}>Fazendas Cadastradas</Text>
+                        <Text style={styles.sub}>Gerencie as fazendas da cooperativa</Text>
                     </View>
-
                     <FarmList
                         farms={farms}
                         onEdit={(farm) => {
@@ -128,26 +112,23 @@ export default function ManageRegistrationsScreen() {
                 </View>
             )}
 
-            {/* CATEGORIES */}
             {activeTab === "categories" && (
                 <View style={styles.section}>
-                    <View style={styles.sectionHeader}>
-                        <View style={styles.headerText}>
-                            <Text style={styles.h2}>Categorias de Produtos</Text>
-                            <Text style={styles.sub}>Gerencie as categorias de produtos</Text>
-                        </View>
-
-                        <Pressable
-                            style={styles.primaryBtn}
-                            onPress={() => {
-                                setEditingCategory(null);
-                                setIsCategoryModalOpen(true);
-                            }}
-                        >
-                            <Plus size={16} color="#FFF" />
-                            <Text style={styles.primaryBtnTxt}>Nova Categoria</Text>
-                        </Pressable>
+                    <View style={styles.headerText}>
+                        <Text style={styles.h2}>Categorias de Produtos</Text>
+                        <Text style={styles.sub}>Gerencie as categorias de produtos</Text>
                     </View>
+
+                    <Pressable
+                        style={[styles.primaryBtn, styles.fullWidthBtn]}
+                        onPress={() => {
+                            setEditingCategory(null);
+                            setIsCategoryModalOpen(true);
+                        }}
+                    >
+                        <Plus size={16} color="#FFF" />
+                        <Text style={styles.primaryBtnTxt}>Nova Categoria</Text>
+                    </Pressable>
 
                     <CategoryList
                         categories={categories}
@@ -163,7 +144,6 @@ export default function ManageRegistrationsScreen() {
                 </View>
             )}
 
-            {/* Modals */}
             <FarmFormModal
                 isOpen={isFarmModalOpen}
                 onClose={() => setIsFarmModalOpen(false)}
@@ -183,27 +163,40 @@ export default function ManageRegistrationsScreen() {
 
 const styles = StyleSheet.create({
     loading: { flex: 1, alignItems: "center", justifyContent: "center" },
-    container: { padding: 16, gap: 16, backgroundColor: "#F9FAFB", flexGrow: 1 },
 
-    section: { gap: 12 },
-    sectionHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        gap: 12,
+    container: {
+        padding: 16,
+        gap: 24,
+        backgroundColor: "#F9FAFB",
+        flexGrow: 1,
     },
-    headerText: { gap: 4 },
-    h2: { fontSize: 18, fontWeight: "700", color: "#111827" },
+
+    section: { gap: 16, marginBottom: 24 },
+
+    headerText: {
+        gap: 2,
+        marginBottom: -10,
+    },
+    h2: { fontSize: 20, fontWeight: "700", color: "#111827" },
     sub: { fontSize: 13, color: "#6B7280" },
 
     primaryBtn: {
         flexDirection: "row",
         alignItems: "center",
+        justifyContent: "center",
         gap: 8,
-        backgroundColor: "#10B981",
-        paddingHorizontal: 14,
-        paddingVertical: 10,
-        borderRadius: 8,
+        backgroundColor: "#16A34A",
+        paddingVertical: 12,
+        borderRadius: 10,
+        shadowColor: "#16A34A",
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3,
     },
-    primaryBtnTxt: { color: "#FFF", fontWeight: "700" },
+    fullWidthBtn: {
+        width: "100%",
+        alignSelf: "center",
+    },
+
+    primaryBtnTxt: { color: "#FFF", fontWeight: "700", fontSize: 15, letterSpacing: 0.3 },
 });

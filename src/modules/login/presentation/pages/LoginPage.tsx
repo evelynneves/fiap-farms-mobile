@@ -24,7 +24,7 @@ export default function LoginScreen() {
 const s = StyleSheet.create({
     page: {
         flex: 1,
-        backgroundColor: "#F0FDF4", // simples (no lugar do linear-gradient)
+        backgroundColor: "#F0FDF4",
         alignItems: "center",
         justifyContent: "center",
         padding: 16,

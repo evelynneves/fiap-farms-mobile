@@ -189,7 +189,6 @@ export default function LoggedLayout() {
                 <Drawer
                     drawerContent={(p) => <CustomDrawerContent {...p} onLogout={logout} />}
                     screenOptions={({ route }) => {
-                        // route.name aqui é "home", "registrations", etc.
                         const name = route.name as SimpleRoute;
                         const headerCfg = HEADER[name] ?? HEADER["home/index"];
                         return {

@@ -5,11 +5,8 @@ import type { DashboardStat } from "../../domain/entities/DashboardStat";
 
 type Props = {
     stat: DashboardStat;
-    /** opcional: um ícone do lucide-react-native pra exibir na pastilha */
     icon?: React.ReactNode;
-    /** opcional: cor da pastilha do ícone */
-    tint?: string; // ex: "#EAF7F0"
-    /** opcional: callback se o card for “clicável” */
+    tint?: string;
     onPress?: () => void;
 };
 
@@ -54,7 +51,6 @@ const styles = StyleSheet.create({
         padding: 16,
         borderWidth: 1,
         borderColor: "#E5E7EB",
-        // sombra suave
         shadowColor: "#000",
         shadowOpacity: 0.06,
         shadowRadius: 8,

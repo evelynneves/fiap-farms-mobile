@@ -9,6 +9,6 @@ export async function addGoal(goals: Goal[], goal: Omit<Goal, "id">): Promise<Go
         throw new Error("Já existe uma meta com este título para este produto");
     }
 
-    const saved = await createGoal(goal); // <<-- recebe Goal com id
+    const saved = await createGoal(goal);
     return [...goals, saved];
 }

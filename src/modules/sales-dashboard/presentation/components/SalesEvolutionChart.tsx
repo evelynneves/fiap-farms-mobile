@@ -1,7 +1,7 @@
 import { eachDayOfInterval, format, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import React, { useMemo } from "react";
-import { Dimensions, StyleSheet, Text, View } from "react-native";
+import { Dimensions, ScrollView, StyleSheet, Text, View } from "react-native";
 import { LineChart } from "react-native-chart-kit";
 import type { DashboardSale } from "../../domain/entities/Sale";
 
@@ -11,7 +11,7 @@ type Props = { salesData: DashboardSale[]; period: Period };
 const currency = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
 export default function SalesEvolutionChart({ salesData, period }: Props) {
-    const chartWidth = Dimensions.get("window").width - 32; // padding externo do card
+    const baseWidth = Dimensions.get("window").width - 64;
 
     const now = new Date();
     const start = period === "7d" ? subDays(now, 7) : period === "30d" ? subDays(now, 30) : subDays(now, 90);
@@ -20,14 +20,13 @@ export default function SalesEvolutionChart({ salesData, period }: Props) {
         const parsed = salesData.map((s) => ({ ...s, _date: new Date(s.date) })).filter((s) => s._date >= start);
 
         let buckets: Date[] = [];
-        let fmt = "EEE"; // seg, ter...
-        if (period === "30d") fmt = "dd"; // 01, 02...
-        if (period === "90d") fmt = "MMM"; // jan, fev...
+        let fmt = "EEE";
+        if (period === "30d") fmt = "dd";
+        if (period === "90d") fmt = "MMM";
 
         if (period === "7d" || period === "30d") {
             buckets = eachDayOfInterval({ start, end: now });
         } else {
-            // 90d → pontos por mês (dia 1)
             const allDays = eachDayOfInterval({ start, end: now });
             buckets = allDays.filter((d) => d.getDate() === 1);
             if (buckets[buckets.length - 1]?.getMonth() !== now.getMonth()) {
@@ -50,16 +49,11 @@ export default function SalesEvolutionChart({ salesData, period }: Props) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [salesData, period]);
 
+    const chartWidth = Math.max(baseWidth, labels.length * 80);
+
     const data = {
         labels,
-        datasets: [
-            {
-                data: values,
-                // cor da linha (usa opacity do chart kit)
-                color: (opacity = 1) => `rgba(34, 197, 94, ${opacity})`,
-                strokeWidth: 2,
-            },
-        ],
+        datasets: [{ data: values, color: (o = 1) => `rgba(34, 197, 94, ${o})`, strokeWidth: 2 }],
     };
 
     const chartConfig = {
@@ -67,12 +61,9 @@ export default function SalesEvolutionChart({ salesData, period }: Props) {
         backgroundGradientFrom: "#FFFFFF",
         backgroundGradientTo: "#FFFFFF",
         decimalPlaces: 0,
-        color: (opacity = 1) => `rgba(34, 197, 94, ${opacity})`, // ticks, eixo, etc.
-        labelColor: (opacity = 1) => `rgba(107, 114, 128, ${opacity})`, // #6B7280
-        propsForDots: {
-            r: "3",
-        },
-        // preenche a área abaixo da linha
+        color: (o = 1) => `rgba(34, 197, 94, ${o})`,
+        labelColor: (o = 1) => `rgba(107, 114, 128, ${o})`,
+        propsForDots: { r: "3" },
         fillShadowGradientFrom: "#22C55E",
         fillShadowGradientTo: "#22C55E",
         fillShadowGradientFromOpacity: 0.15,
@@ -84,19 +75,21 @@ export default function SalesEvolutionChart({ salesData, period }: Props) {
             <Text style={styles.h3}>Evolução das Vendas</Text>
             <Text style={styles.sub}>Período: {period}</Text>
 
-            <LineChart
-                data={data}
-                width={chartWidth}
-                height={260}
-                chartConfig={chartConfig}
-                bezier
-                withInnerLines
-                withOuterLines={false}
-                fromZero
-                segments={5}
-                formatYLabel={(y) => currency(Number(y)).replace(/^R\$\s?/, "R$ ")}
-                style={{ borderRadius: 8 }}
-            />
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <LineChart
+                    data={data}
+                    width={chartWidth}
+                    height={260}
+                    chartConfig={chartConfig}
+                    bezier
+                    withInnerLines
+                    withOuterLines={false}
+                    fromZero
+                    segments={5}
+                    formatYLabel={(y) => currency(Number(y)).replace(/^R\$\s?/, "R$ ")}
+                    style={{ borderRadius: 8, alignSelf: "center" }}
+                />
+            </ScrollView>
         </View>
     );
 }

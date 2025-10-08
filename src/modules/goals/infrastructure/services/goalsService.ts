@@ -8,6 +8,7 @@
  *                                                                             *
  ******************************************************************************/
 
+import { db } from "@/src/modules/shared/infrastructure/firebase";
 import { auth } from "@/src/modules/shared/infrastructure/firebase/firebaseConfig";
 import { collection, deleteDoc, doc, getDocs, setDoc, updateDoc } from "firebase/firestore";
 import { Goal } from "../../domain/entities/Goal";

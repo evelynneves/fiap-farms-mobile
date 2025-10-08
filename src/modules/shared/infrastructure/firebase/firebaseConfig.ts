@@ -12,21 +12,17 @@ const firebaseConfig = {
     appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID!,
 };
 
-// Garante app único (evita “already exists” em hot reload)
 export const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
 let _auth: Auth;
 if (Platform.OS === "web") {
-    // Web: getAuth(app) é suficiente (se quiser, dá pra setar browserLocalPersistence)
     _auth = getAuth(app);
 } else {
-    // Native: initializeAuth só pode ser chamado uma vez
     try {
         _auth = initializeAuth(app, {
             persistence: getReactNativePersistence(AsyncStorage),
         });
     } catch {
-        // se já foi inicializado (hot reload), reaproveita
         _auth = getAuth(app);
     }
 }

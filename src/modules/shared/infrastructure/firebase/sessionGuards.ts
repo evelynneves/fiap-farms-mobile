@@ -38,19 +38,16 @@ export const authBus = new TinyEmitter();
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let bootstrapped = false;
 
-/** Dispara eventos ao mudar o usuário logado */
 onAuthStateChanged(auth, (u) => {
     bootstrapped = true;
     authBus.emit("auth:state", u);
     authBus.emit(u ? "auth:login" : "auth:logout", u);
 });
 
-/** Dispara quando o token/idToken muda (refresh, etc.) */
 onIdTokenChanged(auth, (u) => {
     authBus.emit("auth:token", u);
 });
 
-/** Espera login estar efetivado (útil pós signIn) */
 export function waitUntilSignedIn(timeoutMs = 8000): Promise<void> {
     if (auth.currentUser) return Promise.resolve();
     return new Promise<void>((resolve, reject) => {
@@ -66,7 +63,6 @@ export function waitUntilSignedIn(timeoutMs = 8000): Promise<void> {
     });
 }
 
-/** Espera logout completar (útil antes de redirecionar) */
 export function waitUntilSignedOut(timeoutMs = 8000): Promise<void> {
     if (!auth.currentUser) return Promise.resolve();
     return new Promise<void>((resolve, reject) => {

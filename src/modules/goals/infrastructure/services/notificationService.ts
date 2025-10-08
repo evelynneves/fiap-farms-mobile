@@ -64,7 +64,6 @@ export async function getFreshNotificationsConfig(): Promise<{
         return { stock: true, goals: true, production: true };
     }
 
-    // fallback seguro se o campo notifications não existir
     const data = snap.data();
     return data.notifications ?? { stock: true, goals: true, production: true };
 }

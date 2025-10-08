@@ -9,7 +9,6 @@ import { SummaryCards } from "@/src/modules/production-dashboard/presentation/co
 import { getItemsFromStorage } from "@/src/modules/shared/goal/infrastructure/goalService";
 import React, { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
-// ^ ajuste o import se seu shared estiver em outro caminho
 
 type Stage = "waiting" | "production" | "harvested";
 type ItemWithStage = Item & { productionStage: Stage; progress: number };
@@ -104,8 +103,5 @@ const styles = StyleSheet.create({
     },
     gridItem: {
         width: "100%",
-        // se quiser 2 colunas em tablets:
-        // @ts-ignore
-        // width: "48%",
     },
 });

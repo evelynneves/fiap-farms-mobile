@@ -9,18 +9,15 @@ import {
 import {
     getUserNotifications,
     setUserNotifications,
-    // ✅ importe o tipo do service
     type UserNotification,
 } from "../../infrastructure/services/userNotificationsService";
 
 export default function NotificationsButton() {
-    // ✅ agora a lista usa o tipo do service
     const [open, setOpen] = useState(false);
     const [list, setList] = useState<UserNotification[]>([]);
 
     useEffect(() => {
         (async () => {
-            // ✅ garanta que o retorno é o mesmo tipo
             const data = (await getUserNotifications()) as UserNotification[];
             setList(data);
         })();
@@ -29,7 +26,6 @@ export default function NotificationsButton() {
     const unread = list.filter((n) => !n.read).length;
 
     async function onMarkAll() {
-        // ✅ preserve o shape do tipo (timestamp continua string)
         const updated: UserNotification[] = list.map((n) => ({ ...n, read: true }));
         await markAllNotificationsAsRead(list.map((n) => n.id));
         setList(updated);
@@ -50,14 +46,12 @@ export default function NotificationsButton() {
         await setUserNotifications(updated);
     }
 
-    // ✅ evita indexação dinâmica com template string
     const typeStyles: Record<UserNotification["type"], any> = {
         success: styles.successItem,
         warning: styles.warningItem,
         info: styles.infoItem,
     };
 
-    // ✅ timestamp é string segundo o service
     const fmtDate = (ts: string | undefined) => (ts ? new Date(ts).toLocaleString("pt-BR") : "");
 
     return (

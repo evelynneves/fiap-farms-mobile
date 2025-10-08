@@ -23,7 +23,6 @@ export interface UserNotification {
     read: boolean;
 }
 
-// Em mobile, use um cache por usuário para evitar colisões entre sessões.
 const storageKeyFor = (uid: string) => `user_notifications:${uid}`;
 
 /**
@@ -83,9 +82,7 @@ export async function setUserNotifications(list: UserNotification[]): Promise<vo
 
     try {
         await AsyncStorage.setItem(key, JSON.stringify(Array.isArray(list) ? list : []));
-    } catch {
-        // ignora erro de cache
-    }
+    } catch {}
 }
 
 /**
@@ -94,19 +91,13 @@ export async function setUserNotifications(list: UserNotification[]): Promise<vo
 export async function clearUserNotificationsCache(): Promise<void> {
     const user = auth.currentUser;
 
-    // Se houver usuário, remova a chave específica dele.
     if (user) {
         try {
             await AsyncStorage.removeItem(storageKeyFor(user.uid));
-        } catch {
-            // ignora erro de cache
-        }
+        } catch {}
     }
 
-    // Back-compat: remove também a chave genérica, caso exista de versões antigas
     try {
         await AsyncStorage.removeItem("user_notifications");
-    } catch {
-        // ignora erro de cache
-    }
+    } catch {}
 }

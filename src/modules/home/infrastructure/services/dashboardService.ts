@@ -25,7 +25,6 @@ function formatCurrency(value: number): string {
  */
 export async function getDashboardStats(): Promise<DashboardStat[]> {
     try {
-        // Consultas paralelas para otimizar desempenho
         const [salesSnap, farmsSnap, itemsSnap, productionSnap] = await Promise.all([
             getDocs(collection(db, "sales")),
             getDocs(collection(db, "farms")),
@@ -37,7 +36,6 @@ export async function getDashboardStats(): Promise<DashboardStat[]> {
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
 
-        // 💰 Cálculo de vendas do mês
         let monthlySales = 0;
         salesSnap.forEach((docSnap) => {
             const data = docSnap.data();
@@ -47,7 +45,6 @@ export async function getDashboardStats(): Promise<DashboardStat[]> {
             }
         });
 
-        // 🌱 Produção ativa
         let activeProduction = 0;
         productionSnap.forEach((docSnap) => {
             const data = docSnap.data();
@@ -56,24 +53,21 @@ export async function getDashboardStats(): Promise<DashboardStat[]> {
             }
         });
 
-        // 🏡 Total de fazendas
         const farmsCount = farmsSnap.size;
 
-        // 📦 Total de produtos
         const itemsCount = itemsSnap.size;
 
-        // Retorno padronizado para exibição no dashboard
         return [
             {
                 title: "Vendas do Mês",
                 value: formatCurrency(monthlySales),
-                change: "+0%", // TODO: comparar com mês anterior
+                change: "+0%",
                 positive: true,
             },
             {
                 title: "Produção Ativa",
                 value: `${activeProduction} ton`,
-                change: "+0%", // TODO: cálculo real
+                change: "+0%",
                 positive: true,
             },
             {

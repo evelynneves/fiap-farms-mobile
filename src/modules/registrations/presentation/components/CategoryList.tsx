@@ -41,7 +41,16 @@ export function CategoryList({ categories, onEdit, onDelete }: Props) {
 }
 
 const styles = StyleSheet.create({
-    card: { backgroundColor: "#FFF", borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 8 },
+    card: {
+        backgroundColor: "#FFF",
+        borderWidth: 1,
+        borderColor: "#E5E7EB",
+        borderRadius: 8,
+        shadowColor: "#000",
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 1,
+    },
     headerRow: { flexDirection: "row", backgroundColor: "#F9FAFB", paddingHorizontal: 16, paddingVertical: 12 },
     head: { color: "#4B5563", fontWeight: "700" },
     center: { textAlign: "center" },

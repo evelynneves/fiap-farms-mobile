@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         padding: 12,
     },
-    info: { flexDirection: "row", alignItems: "center", gap: 12 },
+    info: { flexDirection: "row", alignItems: "center", gap: 8 },
     rank: {
         width: 28,
         height: 28,
@@ -65,8 +65,8 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
     },
-    rankTxt: { color: "#16a34a", fontWeight: "700", fontSize: 13 },
+    rankTxt: { color: "#16a34a", fontWeight: "700", fontSize: 14 },
     product: { fontWeight: "600", color: "#111827" },
-    units: { fontSize: 12, color: "#6B7280" },
+    units: { fontSize: 9, color: "#6B7280" },
     profit: { fontWeight: "700", color: "#111827" },
 });

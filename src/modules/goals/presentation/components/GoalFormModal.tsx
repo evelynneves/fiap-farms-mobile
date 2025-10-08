@@ -34,7 +34,7 @@ export function GoalFormModal({ isOpen, onClose, onSave, editingGoal, products, 
     const [productId, setProductId] = useState("");
     const [target, setTarget] = useState("");
     const [unit, setUnit] = useState("");
-    const [deadline, setDeadline] = useState(""); // ISO yyyy-mm-dd
+    const [deadline, setDeadline] = useState("");
     const [description, setDescription] = useState("");
     const [formError, setFormError] = useState("");
 
@@ -101,7 +101,7 @@ export function GoalFormModal({ isOpen, onClose, onSave, editingGoal, products, 
 
         const selected = products.find((p) => p.id === productId);
         const newGoal: Goal = {
-            id: editingGoal ? editingGoal.id : "", // o service definirá ID no create
+            id: editingGoal ? editingGoal.id : "",
             title: title.trim(),
             type: type as "sales" | "production",
             productId,
@@ -109,7 +109,7 @@ export function GoalFormModal({ isOpen, onClose, onSave, editingGoal, products, 
             target: Number(target),
             current: editingGoal ? editingGoal.current : 0,
             unit,
-            deadline, // mantenha ISO (yyyy-mm-dd)
+            deadline,
             status: editingGoal ? editingGoal.status : "active",
             description: description.trim(),
         };

@@ -41,7 +41,6 @@ export async function addSaleToStorage(sale: Omit<Sale, "id" | "totalValue">): P
 
         const totalValue = sale.quantity * sale.salePrice;
 
-        // cria doc de sale dentro da transação
         const saleRef = doc(salesCol);
         tx.set(saleRef, {
             ...sale,
@@ -101,17 +100,14 @@ export async function updateSaleInStorage(id: string, sale: Omit<Sale, "id" | "t
         const product = productSnap.data() as Item;
         const totalValue = sale.quantity * sale.salePrice;
 
-        // diferença de quantidade para ajustar estoque
         const quantityDiff = sale.quantity - oldSale.quantity;
 
-        // Atualiza venda
         tx.update(saleRef, {
             ...sale,
             totalValue,
             updatedAt: serverTimestamp(),
         });
 
-        // Troca a referência no array de sales do produto
         const oldItemSale: ItemSale = {
             id,
             date: oldSale.date,
@@ -128,7 +124,6 @@ export async function updateSaleInStorage(id: string, sale: Omit<Sale, "id" | "t
             totalValue,
         };
 
-        // Primeiro remove o antigo (se existir), depois adiciona o novo
         tx.update(productRef, {
             quantity: product.quantity - quantityDiff,
             sales: arrayRemove(oldItemSale),
@@ -157,7 +152,6 @@ export async function deleteSaleFromStorage(id: string): Promise<void> {
         const productRef = doc(db, "items", sale.productId);
         const productSnap = await tx.get(productRef);
         if (!productSnap.exists()) {
-            // Se o produto sumiu, ao menos removemos a venda
             tx.delete(saleRef);
             return;
         }
@@ -172,10 +166,8 @@ export async function deleteSaleFromStorage(id: string): Promise<void> {
             totalValue: sale.totalValue,
         };
 
-        // Remove a venda
         tx.delete(saleRef);
 
-        // Devolve o estoque e remove o registro do array
         tx.update(productRef, {
             quantity: product.quantity + sale.quantity,
             sales: arrayRemove(itemSale),

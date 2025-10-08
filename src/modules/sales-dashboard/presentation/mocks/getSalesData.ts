@@ -8,7 +8,7 @@ export function getSalesData(): DashboardSale[] {
             profit: 23400,
             growth: 12,
             units: 450,
-            date: "2025-09-25", // ISO string
+            date: "2025-09-25",
             farmName: "Fazenda São João",
             category: "Grãos",
         },
