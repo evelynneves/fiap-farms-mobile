@@ -156,57 +156,64 @@ export default function InventoryScreen() {
         );
     }
 
+    const noBaseData = farms.length === 0 || categories.length === 0;
+
+    if (noBaseData) {
+        return (
+            <View style={styles.emptyWrapper}>
+                <EmptyState
+                    title="Antes de começar..."
+                    description="Para usar o controle de estoque, cadastre primeiro suas fazendas e categorias na tela de 'Gerenciar Cadastros'."
+                />
+            </View>
+        );
+    }
+
+    const hasItems = items.length > 0;
+
     return (
         <ScrollView contentContainerStyle={styles.container}>
             {!!error && <AlertMessage message={error} />}
 
             <SummaryCards totalItems={items.length} lowStockCount={lowStockItems.length} totalValue={totalValue} />
 
-            <Pressable
-                onPress={() => {
-                    setEditingItem(null);
-                    setIsModalOpen(true);
-                }}
-                style={[styles.btn, styles.btnPrimary, styles.fullWidthBtn]}
-            >
-                <Text style={styles.btnPrimaryTxt}>+ Adicionar Item</Text>
-            </Pressable>
+            {/* ✅ Botão aparece sempre que há fazendas e categorias */}
+            {farms.length > 0 && categories.length > 0 && (
+                <Pressable
+                    onPress={() => {
+                        setEditingItem(null);
+                        setIsModalOpen(true);
+                    }}
+                    style={[styles.btn, styles.btnPrimary, styles.fullWidthBtn]}
+                >
+                    <Text style={styles.btnPrimaryTxt}>+ Adicionar Item</Text>
+                </Pressable>
+            )}
 
-            <View>
-                <View className="filterRow" style={styles.filterRow}>
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.filters}
-                    >
-                        <FilterButtons
-                            categories={categories}
-                            selected={selectedCategory}
-                            onSelect={setSelectedCategory}
-                        />
-                    </ScrollView>
-
-                    {categories.length > 3 && (
-                        <View style={styles.scrollHint}>
-                            <Text style={styles.scrollHintTxt}>›</Text>
-                        </View>
-                    )}
-                </View>
+            <View style={styles.filterRow}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>
+                    <FilterButtons categories={categories} selected={selectedCategory} onSelect={setSelectedCategory} />
+                </ScrollView>
+                {categories.length > 3 && (
+                    <View style={styles.scrollHint}>
+                        <Text style={styles.scrollHintTxt}>›</Text>
+                    </View>
+                )}
             </View>
 
-            <ItemList
-                items={filteredItems}
-                onEdit={(item) => {
-                    setEditingItem(item);
-                    setIsModalOpen(true);
-                }}
-                onDelete={async (id) => {
-                    const remaining = await deleteItem(items, id);
-                    setItems(remaining);
-                }}
-            />
-
-            {filteredItems.length === 0 && (
+            {hasItems ? (
+                <ItemList
+                    items={filteredItems}
+                    onEdit={(item) => {
+                        setEditingItem(item);
+                        setIsModalOpen(true);
+                    }}
+                    onDelete={async (id) => {
+                        const remaining = await deleteItem(items, id);
+                        setItems(remaining);
+                    }}
+                />
+            ) : (
                 <EmptyState
                     title="Nenhum item encontrado"
                     description={
@@ -233,7 +240,7 @@ export default function InventoryScreen() {
 
 const styles = StyleSheet.create({
     loading: { flex: 1, alignItems: "center", justifyContent: "center" },
-    container: { padding: 16, gap: 12 },
+    container: { padding: 16, gap: 12, backgroundColor: "#F9FAFB", flexGrow: 1 },
     filterRow: { flexDirection: "row", alignItems: "center" },
     filters: { flexDirection: "row", alignItems: "center", gap: 8, paddingRight: 16 },
     scrollHint: {
@@ -256,4 +263,11 @@ const styles = StyleSheet.create({
     },
     btnPrimaryTxt: { color: "#FFF", fontWeight: "700", textAlign: "center", fontSize: 15, letterSpacing: 0.3 },
     fullWidthBtn: { width: "100%", alignSelf: "center", marginTop: 6 },
+    emptyWrapper: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#F9FAFB",
+        padding: 32,
+    },
 });

@@ -9,17 +9,18 @@ import { Item } from "@/src/modules/sales-dashboard/domain/entities/Item";
 import type { DashboardSale, Sale as DashboardSaleEntity } from "@/src/modules/sales-dashboard/domain/entities/Sale";
 
 import CategoryDistributionChart from "@/src/modules/sales-dashboard/presentation/components/CategoryDistributionChart";
+import { EmptyState } from "@/src/modules/sales-dashboard/presentation/components/EmptyState";
 import ProfitChartBase from "@/src/modules/sales-dashboard/presentation/components/ProfitChart";
 import SalesDashboardList from "@/src/modules/sales-dashboard/presentation/components/SalesDashboardList";
 import SalesEvolutionChart from "@/src/modules/sales-dashboard/presentation/components/SalesEvolutionChart";
 import { SummaryCards } from "@/src/modules/sales-dashboard/presentation/components/SummaryCards";
 import TopProducts from "@/src/modules/sales-dashboard/presentation/components/TopProducts";
+import { AlertMessage } from "@/src/modules/sales/presentation/components/AlertMessage";
 
 import type { Sale as SharedSale } from "@/src/modules/shared/goal/domain/entities/Sale";
 
-type Period = "7d" | "30d" | "90d";
-
 const ProfitChart = ProfitChartBase as unknown as React.ComponentType<{ salesData: DashboardSale[] }>;
+type Period = "7d" | "30d" | "90d";
 
 const withFarmPrefix = (farm?: string) => {
     if (!farm) return "";
@@ -30,6 +31,7 @@ export default function SalesDashboardScreen() {
     const [selectedPeriod, setSelectedPeriod] = useState<Period>("30d");
     const [items, setItems] = useState<Item[]>([]);
     const [sales, setSales] = useState<DashboardSaleEntity[]>([]);
+    const [error, setError] = useState("");
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -58,6 +60,8 @@ export default function SalesDashboardScreen() {
 
                 setItems(itemsArr);
                 setSales(mapped);
+            } catch (err: any) {
+                setError(err.message ?? "Erro ao carregar dados de vendas");
             } finally {
                 setLoading(false);
             }
@@ -113,6 +117,25 @@ export default function SalesDashboardScreen() {
         );
     }
 
+    if (error) {
+        return (
+            <View style={styles.loading}>
+                <AlertMessage message={error} />
+            </View>
+        );
+    }
+
+    if (items.length === 0 || sales.length === 0) {
+        return (
+            <View style={styles.emptyWrapper}>
+                <EmptyState
+                    title="Nenhum dado de vendas encontrado"
+                    description="Para visualizar estatísticas, cadastre produtos e registre vendas no sistema."
+                />
+            </View>
+        );
+    }
+
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.periodRow}>
@@ -159,8 +182,7 @@ export default function SalesDashboardScreen() {
 
 const styles = StyleSheet.create({
     loading: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#F9FAFB" },
-    container: { padding: 16, gap: 16, backgroundColor: "#F9FAFB" },
-
+    container: { padding: 16, gap: 16, backgroundColor: "#F9FAFB", flexGrow: 1 },
     periodRow: { flexDirection: "row", justifyContent: "flex-end", gap: 8 },
     periodBtn: {
         borderWidth: 1,
@@ -173,7 +195,13 @@ const styles = StyleSheet.create({
     periodBtnActive: { backgroundColor: "#16a34a", borderColor: "#15803d" },
     periodTxt: { color: "#111827" },
     periodTxtActive: { color: "#fff", fontWeight: "700" },
-
     row: { gap: 16 },
     cardCol: { gap: 16 },
+    emptyWrapper: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#F9FAFB",
+        padding: 32,
+    },
 });

@@ -1,13 +1,3 @@
-/******************************************************************************
- *                                                                             *
- * Creation Date : 08/10/2025                                                  *
- *                                                                             *
- * Property : (c) This program, code or item is the Intellectual Property of   *
- * Evelyn Neves Barreto. Any use or copy of this code is prohibited without    *
- * the express written authorization of Evelyn. All rights reserved.           *
- *                                                                             *
- ******************************************************************************/
-
 import {
     addNotification,
     getFreshNotificationsConfig,
@@ -22,6 +12,7 @@ import {
     updateSaleInStorage,
 } from "@/src/modules/sales/infrastructure/services/saleService";
 import { AlertMessage } from "@/src/modules/sales/presentation/components/AlertMessage";
+import { EmptyState } from "@/src/modules/sales/presentation/components/EmptyState";
 import { SaleFormModal } from "@/src/modules/sales/presentation/components/SaleFormModal";
 import { SalesList } from "@/src/modules/sales/presentation/components/SalesList";
 import { SummaryCards } from "@/src/modules/sales/presentation/components/SummaryCards";
@@ -188,6 +179,49 @@ export default function SalesScreen() {
         );
     }
 
+    const hasProducts = products.length > 0;
+    const hasSales = sales.length > 0;
+
+    if (!hasProducts && !hasSales) {
+        return (
+            <View style={styles.emptyWrapper}>
+                <EmptyState
+                    title="Antes de começar..."
+                    description='Para registrar vendas, cadastre primeiro seus produtos na tela de "Controle de Estoque".'
+                />
+            </View>
+        );
+    }
+
+    if (hasProducts && !hasSales) {
+        return (
+            <View style={styles.emptyWrapper}>
+                <EmptyState
+                    title="Nenhuma venda registrada"
+                    description="Adicione suas primeiras vendas para começar o acompanhamento."
+                />
+                <Pressable
+                    style={[styles.primaryBtn, styles.fullWidthBtn, { marginTop: 24 }]}
+                    onPress={() => {
+                        setEditingSale(null);
+                        setIsModalOpen(true);
+                    }}
+                >
+                    <Plus size={16} color="#FFF" />
+                    <Text style={styles.primaryBtnTxt}>Registrar Venda</Text>
+                </Pressable>
+
+                <SaleFormModal
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    products={products}
+                    onSave={handleSaveSale}
+                    editingSale={editingSale}
+                />
+            </View>
+        );
+    }
+
     return (
         <ScrollView contentContainerStyle={styles.container}>
             {!!error && <AlertMessage message={error} />}
@@ -212,14 +246,18 @@ export default function SalesScreen() {
                 </View>
             </View>
 
-            <SalesList
-                sales={sales}
-                onEdit={(sale) => {
-                    setEditingSale(sale);
-                    setIsModalOpen(true);
-                }}
-                onDelete={handleDeleteSale}
-            />
+            {sales.length === 0 ? (
+                <EmptyState title="Nenhuma venda registrada" description="Ainda não há registros de vendas." />
+            ) : (
+                <SalesList
+                    sales={sales}
+                    onEdit={(sale) => {
+                        setEditingSale(sale);
+                        setIsModalOpen(true);
+                    }}
+                    onDelete={handleDeleteSale}
+                />
+            )}
 
             <SaleFormModal
                 isOpen={isModalOpen}
@@ -264,5 +302,12 @@ const styles = StyleSheet.create({
         width: "100%",
         alignSelf: "center",
         marginTop: 6,
+    },
+    emptyWrapper: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#F9FAFB",
+        padding: 32,
     },
 });

@@ -10,6 +10,7 @@ import { deleteCategory, getFarms } from "@/src/modules/registrations/infrastruc
 import { AlertMessage } from "@/src/modules/registrations/presentation/components/AlertMessage";
 import { CategoryFormModal } from "@/src/modules/registrations/presentation/components/CategoryFormModal";
 import { CategoryList } from "@/src/modules/registrations/presentation/components/CategoryList";
+import { EmptyState } from "@/src/modules/registrations/presentation/components/EmptyState";
 import { FarmFormModal } from "@/src/modules/registrations/presentation/components/FarmFormModal";
 import { FarmList } from "@/src/modules/registrations/presentation/components/FarmList";
 import { Tabs } from "@/src/modules/registrations/presentation/components/Tabs";
@@ -83,6 +84,7 @@ export default function ManageRegistrationsScreen() {
 
             {activeTab === "farms" && (
                 <View style={styles.section}>
+                    {/* 🔹 Botão sempre visível */}
                     <Pressable
                         style={[styles.primaryBtn, styles.fullWidthBtn]}
                         onPress={() => {
@@ -93,21 +95,31 @@ export default function ManageRegistrationsScreen() {
                         <Plus size={16} color="#FFF" />
                         <Text style={styles.primaryBtnTxt}>Nova Fazenda</Text>
                     </Pressable>
+
                     <View style={styles.headerText}>
                         <Text style={styles.h2}>Fazendas Cadastradas</Text>
                         <Text style={styles.sub}>Gerencie as fazendas da cooperativa</Text>
                     </View>
-                    <FarmList
-                        farms={farms}
-                        onEdit={(farm) => {
-                            setEditingFarm(farm);
-                            setIsFarmModalOpen(true);
-                        }}
-                        onDelete={async (id) => {
-                            const deleted = await deleteFarm(farms, id);
-                            setFarms(deleted);
-                        }}
-                    />
+
+                    {/* 🔹 Lista ou EmptyState */}
+                    {farms.length === 0 ? (
+                        <EmptyState
+                            title="Nenhuma fazenda cadastrada"
+                            description="Adicione suas fazendas para começar o controle de produtos."
+                        />
+                    ) : (
+                        <FarmList
+                            farms={farms}
+                            onEdit={(farm) => {
+                                setEditingFarm(farm);
+                                setIsFarmModalOpen(true);
+                            }}
+                            onDelete={async (id) => {
+                                const deleted = await deleteFarm(farms, id);
+                                setFarms(deleted);
+                            }}
+                        />
+                    )}
                 </View>
             )}
 
@@ -118,6 +130,7 @@ export default function ManageRegistrationsScreen() {
                         <Text style={styles.sub}>Gerencie as categorias de produtos</Text>
                     </View>
 
+                    {/* 🔹 Botão sempre visível */}
                     <Pressable
                         style={[styles.primaryBtn, styles.fullWidthBtn]}
                         onPress={() => {
@@ -129,20 +142,29 @@ export default function ManageRegistrationsScreen() {
                         <Text style={styles.primaryBtnTxt}>Nova Categoria</Text>
                     </Pressable>
 
-                    <CategoryList
-                        categories={categories}
-                        onEdit={(category) => {
-                            setEditingCategory(category);
-                            setIsCategoryModalOpen(true);
-                        }}
-                        onDelete={async (id) => {
-                            await deleteCategory(id);
-                            setCategories((prev) => prev.filter((c) => (c.id === id ? false : true)));
-                        }}
-                    />
+                    {/* 🔹 Lista ou EmptyState */}
+                    {categories.length === 0 ? (
+                        <EmptyState
+                            title="Nenhuma categoria cadastrada"
+                            description="Crie categorias para classificar seus produtos."
+                        />
+                    ) : (
+                        <CategoryList
+                            categories={categories}
+                            onEdit={(category) => {
+                                setEditingCategory(category);
+                                setIsCategoryModalOpen(true);
+                            }}
+                            onDelete={async (id) => {
+                                await deleteCategory(id);
+                                setCategories((prev) => prev.filter((c) => c.id !== id));
+                            }}
+                        />
+                    )}
                 </View>
             )}
 
+            {/* 🔹 Modais */}
             <FarmFormModal
                 isOpen={isFarmModalOpen}
                 onClose={() => setIsFarmModalOpen(false)}
@@ -162,23 +184,17 @@ export default function ManageRegistrationsScreen() {
 
 const styles = StyleSheet.create({
     loading: { flex: 1, alignItems: "center", justifyContent: "center" },
-
     container: {
         padding: 16,
         gap: 24,
         backgroundColor: "#F9FAFB",
         flexGrow: 1,
+        flex: 1,
     },
-
     section: { gap: 16, marginBottom: 24 },
-
-    headerText: {
-        gap: 2,
-        marginBottom: -10,
-    },
+    headerText: { gap: 2, marginBottom: -10 },
     h2: { fontSize: 20, fontWeight: "700", color: "#111827" },
     sub: { fontSize: 13, color: "#6B7280" },
-
     primaryBtn: {
         flexDirection: "row",
         alignItems: "center",
@@ -196,6 +212,5 @@ const styles = StyleSheet.create({
         width: "100%",
         alignSelf: "center",
     },
-
     primaryBtnTxt: { color: "#FFF", fontWeight: "700", fontSize: 15, letterSpacing: 0.3 },
 });

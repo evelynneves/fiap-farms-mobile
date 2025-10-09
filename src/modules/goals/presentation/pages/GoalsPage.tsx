@@ -157,6 +157,17 @@ export default function GoalsScreen() {
         );
     }
 
+    if (products.length === 0) {
+        return (
+            <View style={styles.emptyWrapper}>
+                <EmptyState
+                    title="Nenhum produto encontrado"
+                    description="Para criar metas, cadastre produtos na tela de Controle de Estoque."
+                />
+            </View>
+        );
+    }
+
     return (
         <ScrollView contentContainerStyle={styles.container}>
             {!!error && <AlertMessage tone="error" message={error} />}
@@ -246,16 +257,14 @@ const styles = StyleSheet.create({
         elevation: 3,
         marginBottom: 20,
     },
-    primaryBtnTxt: {
-        color: "#FFF",
-        fontWeight: "700",
-        fontSize: 15,
-        letterSpacing: 0.3,
-    },
-    fullWidthBtn: {
-        width: "100%",
-        alignSelf: "center",
-        marginTop: 6,
-    },
+    primaryBtnTxt: { color: "#FFF", fontWeight: "700", fontSize: 15, letterSpacing: 0.3 },
+    fullWidthBtn: { width: "100%", alignSelf: "center", marginTop: 6 },
     grid: { gap: 12 },
+    emptyWrapper: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#F9FAFB",
+        padding: 32,
+    },
 });

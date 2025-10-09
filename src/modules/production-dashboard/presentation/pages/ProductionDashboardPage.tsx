@@ -18,6 +18,12 @@ export default function ProductionDashboardScreen() {
     const [filter, setFilter] = useState<"all" | Stage>("all");
     const [loading, setLoading] = useState(true);
 
+    const stageLabels: Record<Stage, string> = {
+        waiting: "Aguardando",
+        production: "Em Produção",
+        harvested: "Colhido",
+    };
+
     useEffect(() => {
         (async () => {
             try {
@@ -52,6 +58,17 @@ export default function ProductionDashboardScreen() {
         );
     }
 
+    if (items.length === 0) {
+        return (
+            <View style={styles.emptyWrapper}>
+                <EmptyState
+                    title="Nenhuma produção encontrada"
+                    description="Para visualizar o andamento das produções, cadastre produtos e acompanhe seus estágios aqui."
+                />
+            </View>
+        );
+    }
+
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <SummaryCards totalArea={totalArea} waiting={waiting} production={productionCount} harvested={harvested} />
@@ -76,13 +93,7 @@ export default function ProductionDashboardScreen() {
                     title="Nenhuma produção encontrada"
                     description={
                         filter !== "all"
-                            ? `Não há produções no estágio "${
-                                  filter === "waiting"
-                                      ? "Aguardando"
-                                      : filter === "production"
-                                      ? "Em Produção"
-                                      : "Colhido"
-                              }".`
+                            ? `Não há produções no estágio "${stageLabels[filter]}".`
                             : "Adicione produções para começar o acompanhamento."
                     }
                     onClearFilter={filter !== "all" ? () => setFilter("all") : undefined}
@@ -94,7 +105,7 @@ export default function ProductionDashboardScreen() {
 
 const styles = StyleSheet.create({
     loading: { flex: 1, alignItems: "center", justifyContent: "center" },
-    container: { padding: 16, gap: 16 },
+    container: { padding: 16, gap: 16, backgroundColor: "#F9FAFB", flexGrow: 1 },
     charts: { gap: 16 },
     grid: {
         flexDirection: "row",
@@ -103,5 +114,12 @@ const styles = StyleSheet.create({
     },
     gridItem: {
         width: "100%",
+    },
+    emptyWrapper: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#F9FAFB",
+        padding: 32,
     },
 });
