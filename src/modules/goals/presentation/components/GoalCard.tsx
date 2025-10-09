@@ -1,3 +1,13 @@
+/******************************************************************************
+ *                                                                             *
+ * Creation Date : 09/10/2025                                                  *
+ *                                                                             *
+ * Property : (c) This program, code or item is the Intellectual Property of   *
+ * Evelyn Neves Barreto. Any use or copy of this code is prohibited without    *
+ * the express written authorization of Evelyn. All rights reserved.           *
+ *                                                                             *
+ *******************************************************************************/
+
 import { Calendar, DollarSign, Package } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -20,9 +30,10 @@ export function GoalCard({ goal, onEdit, onDelete }: Props) {
     const status = getGoalStatus(goal);
     const progress = Math.min((goal.current / goal.target) * 100, 100);
     const sc = STATUS_COLORS[status.status];
+    const isDisabled = goal.status === "completed";
 
     return (
-        <View style={styles.card}>
+        <View style={[styles.card, isDisabled && { opacity: 0.6 }]}>
             <View style={styles.header}>
                 <View style={styles.titleWrap}>
                     <Text style={styles.title}>{goal.title}</Text>
@@ -39,7 +50,13 @@ export function GoalCard({ goal, onEdit, onDelete }: Props) {
                         </View>
                         <View style={styles.meta}>
                             <Calendar size={14} color="#6B7280" />
-                            <Text style={styles.metaText}>{new Date(goal.deadline).toLocaleDateString("pt-BR")}</Text>
+                            <Text style={styles.metaText}>
+                                {goal.startDate
+                                    ? `${new Date(goal.startDate).toLocaleDateString("pt-BR")} — ${new Date(
+                                          goal.deadline
+                                      ).toLocaleDateString("pt-BR")}`
+                                    : new Date(goal.deadline).toLocaleDateString("pt-BR")}
+                            </Text>
                         </View>
                     </View>
                 </View>
@@ -67,9 +84,13 @@ export function GoalCard({ goal, onEdit, onDelete }: Props) {
             {!!goal.description && <Text style={styles.desc}>{goal.description}</Text>}
 
             <View style={styles.actionsRow}>
-                <TouchableOpacity style={styles.actionBtn} onPress={() => onEdit(goal)}>
-                    <Text style={styles.actionTxt}>Editar</Text>
-                </TouchableOpacity>
+                {/* Só mostra o botão de editar se a meta ainda não estiver concluída nem vencida */}
+                {!isDisabled && (
+                    <TouchableOpacity style={styles.actionBtn} onPress={() => onEdit(goal)}>
+                        <Text style={styles.actionTxt}>Editar</Text>
+                    </TouchableOpacity>
+                )}
+                {/* Excluir sempre disponível */}
                 <TouchableOpacity style={[styles.actionBtn, styles.actionDanger]} onPress={() => onDelete(goal.id)}>
                     <Text style={[styles.actionTxt, styles.actionDangerTxt]}>Excluir</Text>
                 </TouchableOpacity>

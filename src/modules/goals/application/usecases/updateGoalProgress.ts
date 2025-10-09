@@ -5,6 +5,7 @@ import { doc, updateDoc } from "firebase/firestore";
 import { Goal } from "../../domain/entities/Goal";
 
 export async function updateGoalProgress(goal: Goal, allSales: Sale[]) {
+    if (goal.status === "completed") return;
     const salesForGoal = allSales.filter(
         (s) =>
             s.productId === goal.productId &&

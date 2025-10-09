@@ -48,8 +48,6 @@ export default function HomeScreen() {
         const unsubAuth = onAuthStateChanged(auth, (user) => {
             if (!user) return;
 
-            console.log("Usuário autenticado, iniciando listeners...");
-
             const unsubSales = subscribeSalesAndRecalculateGoals();
             const unsubProd = subscribeProductionAndRecalculateGoals();
             const unsubStock = subscribeLowStockNotifications();

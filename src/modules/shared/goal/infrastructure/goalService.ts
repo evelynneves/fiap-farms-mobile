@@ -206,7 +206,6 @@ export function subscribeProductionAndRecalculateGoals() {
 }
 
 export function subscribeLowStockNotifications() {
-    console.log("entrei nesse subscribe");
     const user = auth.currentUser;
     if (!user) return () => {};
 
@@ -230,20 +229,15 @@ export function subscribeLowStockNotifications() {
             if (changedDocs.length === 0) return;
 
             const lowStockItems = changedDocs.filter((item) => getStockStatus(item).status === "low");
-            console.log("lowStockItems", lowStockItems);
             if (lowStockItems.length === 0) return;
 
             const config = await getFreshNotificationsConfig();
-            console.log("config", config);
             if (!config.stock) return;
 
             for (const item of lowStockItems) {
                 const notifId = `${item.id}-low-stock`;
                 const notifRef = doc(db, `users/${user.uid}/notifications/${notifId}`);
                 const notifSnap = await getDoc(notifRef);
-
-                console.log("notifSnap", notifSnap);
-                console.log("notifSnap exists", notifSnap.exists());
 
                 if (!notifSnap.exists()) {
                     await setDoc(notifRef, {
