@@ -13,17 +13,10 @@ import { auth } from "@/src/modules/shared/infrastructure/firebase/firebaseConfi
 import { collection, getDocs } from "firebase/firestore";
 import { DashboardStat } from "../../domain/entities/DashboardStat";
 
-/**
- * Formata um número para o padrão monetário brasileiro.
- */
 function formatCurrency(value: number): string {
     return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-/**
- * Retorna estatísticas gerais do dashboard principal do app.
- * Inclui dados de vendas, produção, fazendas e itens, todos privados por usuário.
- */
 export async function getDashboardStats(): Promise<DashboardStat[]> {
     const user = auth.currentUser;
     if (!user) throw new Error("Usuário não autenticado");
@@ -43,12 +36,16 @@ export async function getDashboardStats(): Promise<DashboardStat[]> {
         let monthlySales = 0;
         salesSnap.forEach((docSnap) => {
             const data = docSnap.data();
-            const saleDate = new Date(data.date);
-            if (saleDate.getMonth() === currentMonth && saleDate.getFullYear() === currentYear) {
-                monthlySales += data.totalValue ?? 0;
+            const saleDate = data.date ? new Date(data.date) : null;
+
+            if (saleDate && !isNaN(saleDate.valueOf())) {
+                if (saleDate.getMonth() === currentMonth && saleDate.getFullYear() === currentYear) {
+                    monthlySales += data.totalValue ?? 0;
+                }
             }
         });
 
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         let activeProduction = 0;
         productionSnap.forEach((docSnap) => {
             const data = docSnap.data();
@@ -64,7 +61,7 @@ export async function getDashboardStats(): Promise<DashboardStat[]> {
             {
                 title: "Vendas do Mês",
                 value: formatCurrency(monthlySales),
-                change: "+0%", // TODO: calcular comparação com mês anterior
+                change: "+0%", // TODO: calcular variação com mês anterior
                 positive: true,
             },
             {
@@ -82,6 +79,7 @@ export async function getDashboardStats(): Promise<DashboardStat[]> {
         ];
     } catch (error) {
         console.error("Erro ao carregar estatísticas do dashboard:", error);
+
         return [
             {
                 title: "Erro ao carregar dados",

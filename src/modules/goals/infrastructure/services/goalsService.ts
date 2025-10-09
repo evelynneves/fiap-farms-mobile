@@ -10,69 +10,71 @@
 
 import { db } from "@/src/modules/shared/infrastructure/firebase";
 import { auth } from "@/src/modules/shared/infrastructure/firebase/firebaseConfig";
-import { collection, deleteDoc, doc, getDocs, setDoc, updateDoc } from "firebase/firestore";
+import {
+    collection,
+    deleteDoc,
+    doc,
+    getDocs,
+    orderBy,
+    query,
+    serverTimestamp,
+    setDoc,
+    updateDoc,
+} from "firebase/firestore";
 import { Goal } from "../../domain/entities/Goal";
 
-/**
- * Obtém a subcoleção de metas do usuário autenticado.
- */
 const getGoalsCollection = () => {
     const user = auth.currentUser;
     if (!user) throw new Error("Usuário não autenticado");
-    return collection(db, "users", user.uid, "goals");
+    return collection(db, `users/${user.uid}/goals`);
 };
 
-/**
- * Busca todas as metas do usuário autenticado.
- */
 export async function fetchGoals(): Promise<Goal[]> {
-    const snapshot = await getDocs(getGoalsCollection());
-    return snapshot.docs.map(
-        (docSnap) =>
-            ({
-                id: docSnap.id,
-                ...docSnap.data(),
-            } as Goal)
-    );
-}
+    const q = query(getGoalsCollection(), orderBy("createdAt", "desc"));
+    const snapshot = await getDocs(q);
 
-/**
- * Cria uma nova meta no Firestore.
- */
-export async function createGoal(goal: Omit<Goal, "id">): Promise<void> {
-    const col = getGoalsCollection();
-    const ref = doc(col);
+    return snapshot.docs.map((docSnap) => {
+        const data = docSnap.data() as Omit<Goal, "id">;
 
-    const now = new Date();
-    const payload = {
-        ...goal,
-        id: ref.id,
-        createdAt: now.toISOString(),
-        startDate: goal.startDate ?? now.toISOString(),
-        updatedAt: now.toISOString(),
-        status: "active",
-    };
-
-    await setDoc(ref, payload);
-}
-
-/**
- * Atualiza uma meta existente.
- */
-export async function updateGoalFirestore(goal: Goal): Promise<void> {
-    if (!goal.id) throw new Error("ID da meta ausente");
-    const ref = doc(getGoalsCollection(), goal.id);
-    await updateDoc(ref, {
-        ...goal,
-        updatedAt: new Date().toISOString(),
+        return {
+            id: docSnap.id,
+            ...data,
+            startDate: data.startDate ?? new Date().toISOString(),
+            deadline: data.deadline ?? null,
+        } as Goal;
     });
 }
 
-/**
- * Exclui uma meta do Firestore.
- */
+export async function createGoal(goal: Omit<Goal, "id">): Promise<void> {
+    const col = getGoalsCollection();
+    const ref = doc(col);
+    const now = new Date().toISOString();
+
+    await setDoc(ref, {
+        ...goal,
+        id: ref.id,
+        status: goal.status ?? "active",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        startDate: goal.startDate ?? now,
+        deadline: goal.deadline ?? null,
+    });
+}
+
+export async function updateGoalFirestore(goal: Goal): Promise<void> {
+    if (!goal.id) throw new Error("ID da meta não informado");
+
+    const ref = doc(getGoalsCollection(), goal.id);
+
+    await updateDoc(ref, {
+        ...goal,
+        updatedAt: serverTimestamp(),
+    });
+}
+
 export async function deleteGoalFirestore(id: string): Promise<void> {
-    if (!id) throw new Error("ID da meta ausente");
+    if (!id) throw new Error("ID da meta não informado");
+
     const ref = doc(getGoalsCollection(), id);
     await deleteDoc(ref);
 }

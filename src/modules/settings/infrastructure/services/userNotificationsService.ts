@@ -21,6 +21,7 @@ export interface UserNotification {
     message: string;
     timestamp: string;
     read: boolean;
+    resolved?: boolean;
 }
 
 const storageKeyFor = (uid: string) => `user_notifications:${uid}`;

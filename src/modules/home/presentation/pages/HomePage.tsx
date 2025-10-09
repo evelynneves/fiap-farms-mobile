@@ -1,4 +1,5 @@
 import { type Href } from "expo-router";
+import { BarChart3, DollarSign, Package, Settings, Sprout, Tag, Target } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 
@@ -7,7 +8,13 @@ import { getDashboardStats } from "@/src/modules/home/infrastructure/services/da
 import { DashCards } from "@/src/modules/home/presentation/components/DashCards";
 import StatsCard from "@/src/modules/home/presentation/components/StatsCard";
 import { AlertMessage } from "@/src/modules/settings/presentation/components/AlertMessage";
-import { BarChart3, DollarSign, Package, Settings, Sprout, Tag, Target } from "lucide-react-native";
+import {
+    subscribeLowStockNotifications,
+    subscribeProductionAndRecalculateGoals,
+    subscribeSalesAndRecalculateGoals,
+} from "@/src/modules/shared/goal";
+import { auth } from "@/src/modules/shared/infrastructure/firebase/firebaseConfig";
+import { onAuthStateChanged } from "firebase/auth";
 
 type HomeCard = {
     id: string;
@@ -29,8 +36,7 @@ export default function HomeScreen() {
                 const statsData = await getDashboardStats();
                 setStats(statsData);
                 setError("");
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            } catch (err: any) {
+            } catch {
                 setError("Falha ao carregar dados da Home. Tente novamente mais tarde.");
             } finally {
                 setLoading(false);
@@ -38,6 +44,25 @@ export default function HomeScreen() {
         })();
     }, []);
 
+    useEffect(() => {
+        const unsubAuth = onAuthStateChanged(auth, (user) => {
+            if (!user) return;
+
+            console.log("Usuário autenticado, iniciando listeners...");
+
+            const unsubSales = subscribeSalesAndRecalculateGoals();
+            const unsubProd = subscribeProductionAndRecalculateGoals();
+            const unsubStock = subscribeLowStockNotifications();
+
+            return () => {
+                unsubSales?.();
+                unsubProd?.();
+                unsubStock?.();
+            };
+        });
+
+        return () => unsubAuth();
+    }, []);
     const cards: HomeCard[] = [
         {
             id: "registrations",

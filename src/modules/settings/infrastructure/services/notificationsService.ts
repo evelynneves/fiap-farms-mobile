@@ -1,16 +1,6 @@
-/******************************************************************************
- *                                                                             *
- * Creation Date : 06/10/2025                                                  *
- *                                                                             *
- * Property : (c) This program, code or item is the Intellectual Property of   *
- * Evelyn Neves Barreto. Any use or copy of this code is prohibited without    *
- * the express written authorization of Evelyn. All rights reserved.           *
- *                                                                             *
- ******************************************************************************/
-
 import { db } from "@/src/modules/shared/infrastructure/firebase";
 import { auth } from "@/src/modules/shared/infrastructure/firebase/firebaseConfig";
-import { collection, deleteDoc, doc, getDoc, setDoc, updateDoc, writeBatch } from "firebase/firestore";
+import { collection, doc, getDoc, serverTimestamp, setDoc, updateDoc, writeBatch } from "firebase/firestore";
 
 export type NotificationsConfig = {
     stock: boolean;
@@ -24,77 +14,68 @@ const DEFAULT_CONFIG: NotificationsConfig = {
     production: true,
 };
 
-/**
- * Lê a configuração de notificações do usuário autenticado.
- * Se não existir, cria com defaults e devolve.
- */
 export async function getNotifications(): Promise<NotificationsConfig> {
     const user = auth.currentUser;
-    if (!user) {
-        return DEFAULT_CONFIG;
-    }
+    if (!user) return DEFAULT_CONFIG;
 
-    const ref = doc(db, "users", user.uid);
-    const snap = await getDoc(ref);
+    const userRef = doc(db, `users/${user.uid}`);
+    const snap = await getDoc(userRef);
 
     if (snap.exists()) {
-        const data = snap.data() as { notifications?: Partial<NotificationsConfig> };
+        const data = snap.data();
         return {
             stock: data.notifications?.stock ?? true,
             goals: data.notifications?.goals ?? true,
             production: data.notifications?.production ?? true,
         };
-    } else {
-        await setDoc(ref, { notifications: DEFAULT_CONFIG }, { merge: true });
-        return DEFAULT_CONFIG;
     }
+
+    await setDoc(userRef, { notifications: DEFAULT_CONFIG }, { merge: true });
+    return DEFAULT_CONFIG;
 }
 
-/**
- * Persiste a configuração de notificações.
- */
 export async function setNotifications(config: NotificationsConfig): Promise<void> {
     const user = auth.currentUser;
-    if (!user) {
-        console.warn("setNotifications: usuário não autenticado.");
-        return;
-    }
-    const ref = doc(db, "users", user.uid);
-    await setDoc(ref, { notifications: config }, { merge: true });
+    if (!user) throw new Error("Usuário não autenticado");
+
+    const userRef = doc(db, `users/${user.uid}`);
+    await setDoc(userRef, { notifications: config }, { merge: true });
 }
 
-/** Utilitário para pegar a subcoleção de notificações do usuário. */
 const getUserNotificationsCollection = () => {
     const user = auth.currentUser;
     if (!user) throw new Error("Usuário não autenticado");
-    return collection(db, "users", user.uid, "notifications");
+    return collection(db, `users/${user.uid}/notifications`);
 };
 
-/**
- * Marca uma notificação como lida.
- */
 export async function markNotificationAsRead(id: string): Promise<void> {
     const ref = doc(getUserNotificationsCollection(), id);
     await updateDoc(ref, { read: true });
 }
 
-/**
- * Marca várias notificações como lidas em batch (mais eficiente).
- */
 export async function markAllNotificationsAsRead(ids: string[]): Promise<void> {
-    if (!ids?.length) return;
+    if (!ids.length) return;
+
     const batch = writeBatch(db);
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuário não autenticado");
+
     ids.forEach((id) => {
-        const ref = doc(getUserNotificationsCollection(), id);
+        const ref = doc(db, `users/${user.uid}/notifications/${id}`);
         batch.update(ref, { read: true });
     });
+
     await batch.commit();
 }
 
-/**
- * Exclui uma notificação.
- */
-export async function deleteNotification(id: string): Promise<void> {
-    const ref = doc(getUserNotificationsCollection(), id);
-    await deleteDoc(ref);
+export async function resolveNotification(id: string) {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuário não autenticado");
+
+    const ref = doc(db, `users/${user.uid}/notifications/${id}`);
+    await updateDoc(ref, {
+        resolved: true,
+        resolvedAt: serverTimestamp(),
+        read: true,
+    });
 }

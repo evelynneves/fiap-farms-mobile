@@ -1,13 +1,12 @@
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+
 import { addItem } from "@/src/modules/inventory/application/usecases/addItem";
 import { deleteItem } from "@/src/modules/inventory/application/usecases/deleteItem";
 import { updateItem } from "@/src/modules/inventory/application/usecases/updateItem";
 import {
-    addNotification,
-    getFreshNotificationsConfig,
-} from "@/src/modules/inventory/infrastructure/services/notificationService";
-import {
-    subscribeCategories,
-    subscribeFarms,
+    getCategoriesFromStorage,
+    getFarmsFromStorage,
 } from "@/src/modules/inventory/infrastructure/services/referenceDataService";
 import { AlertMessage } from "@/src/modules/inventory/presentation/components/AlertMessage";
 import { EmptyState } from "@/src/modules/inventory/presentation/components/EmptyState";
@@ -15,138 +14,87 @@ import { FilterButtons } from "@/src/modules/inventory/presentation/components/F
 import { ItemFormModal } from "@/src/modules/inventory/presentation/components/ItemFormModal";
 import { ItemList } from "@/src/modules/inventory/presentation/components/ItemTable";
 import { SummaryCards } from "@/src/modules/inventory/presentation/components/SummaryCards";
-import { getStockStatus } from "@/src/modules/inventory/utils/getStockStatus";
-import { Goal, Sale } from "@/src/modules/shared/goal";
-import { subscribeGoals, subscribeItems, subscribeSales } from "@/src/modules/shared/goal/infrastructure/goalService";
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { Item } from "../../domain/entities/Item";
 
-type NotifConfig = { stock: boolean; goals: boolean };
+import { getStockStatus, Sale } from "@/src/modules/shared/goal";
+import {
+    getGoalsFromStorage,
+    getItemsFromStorage,
+    getSalesFromStorage,
+} from "@/src/modules/shared/goal/infrastructure/goalService";
+import { Item } from "../../domain/entities/Item";
 
 export default function InventoryScreen() {
     const [categories, setCategories] = useState<string[]>([]);
     const [farms, setFarms] = useState<string[]>([]);
     const [items, setItems] = useState<Item[]>([]);
-    const [sales, setSales] = useState<Sale[]>([]);
-    const [goals, setGoals] = useState<Goal[]>([]);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(true);
-
     const [selectedCategory, setSelectedCategory] = useState("all");
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<Item | null>(null);
 
-    const salesRef = useRef<Sale[]>([]);
-    const goalsRef = useRef<Goal[]>([]);
-    const notifCfgRef = useRef<NotifConfig>({ stock: true, goals: true });
-
     const units = ["kg", "ton", "sc", "un"];
 
-    useEffect(() => {
-        salesRef.current = sales;
-    }, [sales]);
-
-    useEffect(() => {
-        goalsRef.current = goals;
-    }, [goals]);
-
-    useEffect(() => {
-        (async () => {
-            try {
-                const cfg = await getFreshNotificationsConfig();
-                notifCfgRef.current = {
-                    stock: cfg?.stock ?? true,
-                    goals: cfg?.goals ?? true,
-                };
-            } catch {
-                notifCfgRef.current = { stock: true, goals: true };
-            }
-        })();
-    }, []);
-
-    useEffect(() => {
-        let unsubCats: undefined | (() => void);
-        let unsubFarms: undefined | (() => void);
-        let unsubItems: undefined | (() => void);
-        let unsubSales: undefined | (() => void);
-        let unsubGoals: undefined | (() => void);
-
-        try {
-            unsubCats = subscribeCategories((cats) => setCategories(cats.map((c) => c.name)));
-            unsubFarms = subscribeFarms((fs) => setFarms(fs.map((f) => f.name)));
-
-            unsubSales = subscribeSales(setSales);
-            unsubGoals = subscribeGoals(setGoals);
-            unsubItems = subscribeItems((its) => {
-                const currentSales = salesRef.current;
-                const currentGoals = goalsRef.current;
-
-                const mapped = its.map((item) => {
-                    const productSales = currentSales.filter((s) => s.productId === item.id);
-                    const hasRelatedGoal = currentGoals.some((g) => g.productId === item.id);
-                    return { ...item, sales: productSales, hasRelatedGoal } as Item;
-                });
-
-                setItems(mapped);
-            });
-        } catch (e: any) {
-            setError(e.message ?? "Erro ao assinar dados em tempo real");
-        } finally {
-            setLoading(false);
-        }
-
-        return () => {
-            unsubCats?.();
-            unsubFarms?.();
-            unsubItems?.();
-            unsubSales?.();
-            unsubGoals?.();
-        };
-    }, []);
-
-    const filteredItems = useMemo(
-        () => (selectedCategory === "all" ? items : items.filter((i) => i.category === selectedCategory)),
-        [items, selectedCategory]
-    );
+    const filteredItems = selectedCategory === "all" ? items : items.filter((i) => i.category === selectedCategory);
 
     const lowStockItems = items.filter((i) => getStockStatus(i).status === "low");
     const totalValue = items.reduce((sum, i) => sum + i.quantity * i.costPrice, 0);
 
+    useEffect(() => {
+        (async () => {
+            try {
+                setLoading(true);
+                const [cats, fs, its, sales, goals] = await Promise.all([
+                    getCategoriesFromStorage(),
+                    getFarmsFromStorage(),
+                    getItemsFromStorage(),
+                    getSalesFromStorage(),
+                    getGoalsFromStorage(),
+                ]);
+
+                const enriched: Item[] = (its as unknown as Item[]).map((item) => {
+                    const productSales: Sale[] = sales.filter((s) => s.productId === item.id);
+                    const hasRelatedGoal = goals.some((g) => g.productId === item.id);
+                    return { ...item, sales: productSales, hasRelatedGoal };
+                });
+
+                setCategories(cats.map((c) => c.name));
+                setFarms(fs.map((f) => f.name));
+                setItems(enriched);
+            } catch (err: any) {
+                setError(err.message ?? "Falha ao carregar dados.");
+            } finally {
+                setLoading(false);
+            }
+        })();
+    }, []);
+
     const handleSave = async (item: Item, isEdit: boolean) => {
         try {
-            let persisted: Item | undefined;
-
             if (isEdit) {
-                const updated = await updateItem(items, item);
-                setItems(updated);
-                persisted = updated.find((i) => i.id === item.id);
+                await updateItem(items, item);
             } else {
-                const added = await addItem(items, item);
-                setItems(added);
-                persisted = added.find((i) => !items.some((old) => old.id === i.id)) ?? added[added.length - 1];
+                await addItem(items, item);
             }
 
-            if (persisted && getStockStatus(persisted).status === "low" && notifCfgRef.current.stock) {
-                await addNotification({
-                    type: "warning",
-                    category: "stock",
-                    title: `Estoque Baixo - ${persisted.name}`,
-                    message: `O estoque de ${persisted.name} está abaixo do mínimo (${persisted.quantity}/${persisted.minStock})`,
-                });
-            }
+            const [its, sales, goals] = await Promise.all([
+                getItemsFromStorage(),
+                getSalesFromStorage(),
+                getGoalsFromStorage(),
+            ]);
 
+            const enriched: Item[] = (its as unknown as Item[]).map((it) => {
+                const productSales: Sale[] = sales.filter((s) => s.productId === it.id);
+                const hasRelatedGoal = goals.some((g) => g.productId === it.id);
+                return { ...it, sales: productSales, hasRelatedGoal };
+            });
+
+            setItems(enriched);
             setError("");
-        } catch (e: any) {
-            setError(e.message ?? "Erro ao salvar item");
+        } catch (err: any) {
+            setError(err.message ?? "Erro ao salvar item");
         }
     };
-
-    useEffect(() => {
-        if (selectedCategory !== "all" && !categories.includes(selectedCategory)) {
-            setSelectedCategory("all");
-        }
-    }, [categories, selectedCategory]);
 
     if (loading) {
         return (
@@ -177,7 +125,6 @@ export default function InventoryScreen() {
 
             <SummaryCards totalItems={items.length} lowStockCount={lowStockItems.length} totalValue={totalValue} />
 
-            {/* ✅ Botão aparece sempre que há fazendas e categorias */}
             {farms.length > 0 && categories.length > 0 && (
                 <Pressable
                     onPress={() => {
@@ -194,11 +141,6 @@ export default function InventoryScreen() {
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>
                     <FilterButtons categories={categories} selected={selectedCategory} onSelect={setSelectedCategory} />
                 </ScrollView>
-                {categories.length > 3 && (
-                    <View style={styles.scrollHint}>
-                        <Text style={styles.scrollHintTxt}>›</Text>
-                    </View>
-                )}
             </View>
 
             {hasItems ? (
@@ -243,16 +185,6 @@ const styles = StyleSheet.create({
     container: { padding: 16, gap: 12, backgroundColor: "#F9FAFB", flexGrow: 1 },
     filterRow: { flexDirection: "row", alignItems: "center" },
     filters: { flexDirection: "row", alignItems: "center", gap: 8, paddingRight: 16 },
-    scrollHint: {
-        backgroundColor: "#E5E7EB",
-        width: 24,
-        height: 24,
-        borderRadius: 6,
-        justifyContent: "center",
-        alignItems: "center",
-        marginLeft: -6,
-    },
-    scrollHintTxt: { fontSize: 18, color: "#4B5563", fontWeight: "700", marginTop: -2 },
     btn: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: 10, marginBottom: 20 },
     btnPrimary: {
         backgroundColor: "#16A34A",

@@ -1,8 +1,8 @@
+import { getStockStatus } from "@/src/modules/shared/goal";
 import { DollarSign, Edit, Layers, MapPin, Package, Trash2 } from "lucide-react-native";
 import React from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { Item } from "../../domain/entities/Item";
-import { getStockStatus } from "../../utils/getStockStatus";
 
 type Props = {
     items: Item[];

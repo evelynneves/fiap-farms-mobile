@@ -1,13 +1,25 @@
+/******************************************************************************
+ *                                                                             *
+ * Creation Date : 09/10/2025                                                  *
+ *                                                                             *
+ * Property : (c) This program, code or item is the Intellectual Property of   *
+ * Evelyn Neves Barreto. Any use or copy of this code is prohibited without    *
+ * the express written authorization of Evelyn. All rights reserved.           *
+ *                                                                             *
+ *******************************************************************************/
+
+import { subscribeToNotifications } from "@/src/modules/shared/goal";
 import { db } from "@/src/modules/shared/infrastructure/firebase";
 import { auth } from "@/src/modules/shared/infrastructure/firebase/firebaseConfig";
+import { onAuthStateChanged } from "firebase/auth";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import { Bell } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import { FlatList, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import {
-    deleteNotification,
     markAllNotificationsAsRead,
     markNotificationAsRead,
+    resolveNotification,
 } from "../../infrastructure/services/notificationsService";
 import { setUserNotifications, type UserNotification } from "../../infrastructure/services/userNotificationsService";
 
@@ -17,10 +29,7 @@ export default function NotificationsButton() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        let unsubscribe: (() => void) | undefined;
-
-        const setupListener = async () => {
-            const user = auth.currentUser;
+        const unsubAuth = onAuthStateChanged(auth, (user) => {
             if (!user) {
                 setList([]);
                 setLoading(false);
@@ -28,9 +37,9 @@ export default function NotificationsButton() {
             }
 
             const ref = collection(db, `users/${user.uid}/notifications`);
-            const q = query(ref, orderBy("timestamp", "desc"));
+            const q = query(ref, orderBy("createdAt", "desc"));
 
-            unsubscribe = onSnapshot(q, (snap) => {
+            const unsubFirestore = onSnapshot(q, (snap) => {
                 const notifications = snap.docs.map((doc) => ({
                     id: doc.id,
                     ...(doc.data() as Omit<UserNotification, "id">),
@@ -39,13 +48,16 @@ export default function NotificationsButton() {
                 setList(notifications);
                 setLoading(false);
             });
-        };
 
-        setupListener();
+            return () => unsubFirestore();
+        });
 
-        return () => {
-            if (unsubscribe) unsubscribe();
-        };
+        return () => unsubAuth();
+    }, []);
+
+    useEffect(() => {
+        const unsub = subscribeToNotifications(setList);
+        return () => unsub();
     }, []);
 
     const unread = list.filter((n) => !n.read).length;
@@ -65,10 +77,12 @@ export default function NotificationsButton() {
     }
 
     async function onDelete(id: string) {
-        const updated: UserNotification[] = list.filter((n) => n.id !== id);
-        await deleteNotification(id);
-        setList(updated);
-        await setUserNotifications(updated);
+        setList((prev) => prev.filter((n) => n.id !== id));
+        try {
+            await resolveNotification(id);
+        } catch (e) {
+            console.error("Falha ao resolver notificação:", e);
+        }
     }
 
     const typeStyles: Record<UserNotification["type"], any> = {
@@ -79,9 +93,7 @@ export default function NotificationsButton() {
 
     const fmtDate = (ts: any) => {
         if (!ts) return "";
-        if (typeof ts.toDate === "function") {
-            return ts.toDate().toLocaleString("pt-BR");
-        }
+        if (typeof ts.toDate === "function") return ts.toDate().toLocaleString("pt-BR");
         const date = new Date(ts);
         return isNaN(date.getTime()) ? "" : date.toLocaleString("pt-BR");
     };
@@ -110,30 +122,34 @@ export default function NotificationsButton() {
                             )}
                         </View>
 
-                        <FlatList
-                            data={list}
-                            keyExtractor={(it) => it.id}
-                            style={{ maxHeight: 360 }}
-                            ListEmptyComponent={<Text style={styles.empty}>Nenhuma notificação</Text>}
-                            renderItem={({ item }) => (
-                                <TouchableOpacity
-                                    onPress={() => onMarkOne(item.id)}
-                                    style={[styles.item, item.read ? styles.itemRead : typeStyles[item.type]]}
-                                >
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={styles.itemTitle}>{item.title}</Text>
-                                        <Text style={styles.itemMsg}>{item.message}</Text>
-                                        {!!item.timestamp && (
-                                            <Text style={styles.itemTime}>{fmtDate(item.timestamp)}</Text>
-                                        )}
-                                    </View>
+                        {loading ? (
+                            <Text style={styles.empty}>Carregando...</Text>
+                        ) : (
+                            <FlatList
+                                data={list}
+                                keyExtractor={(it) => it.id}
+                                style={{ maxHeight: 360 }}
+                                ListEmptyComponent={<Text style={styles.empty}>Nenhuma notificação</Text>}
+                                renderItem={({ item }) => (
+                                    <TouchableOpacity
+                                        onPress={() => onMarkOne(item.id)}
+                                        style={[styles.item, item.read ? styles.itemRead : typeStyles[item.type]]}
+                                    >
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={styles.itemTitle}>{item.title}</Text>
+                                            <Text style={styles.itemMsg}>{item.message}</Text>
+                                            {!!item.timestamp && (
+                                                <Text style={styles.itemTime}>{fmtDate(item.timestamp)}</Text>
+                                            )}
+                                        </View>
 
-                                    <TouchableOpacity onPress={() => onDelete(item.id)}>
-                                        <Text style={styles.dismiss}>×</Text>
+                                        <TouchableOpacity onPress={() => onDelete(item.id)}>
+                                            <Text style={styles.dismiss}>×</Text>
+                                        </TouchableOpacity>
                                     </TouchableOpacity>
-                                </TouchableOpacity>
-                            )}
-                        />
+                                )}
+                            />
+                        )}
 
                         <TouchableOpacity onPress={() => setOpen(false)} style={styles.closeBtn}>
                             <Text style={styles.closeTxt}>Fechar</Text>
@@ -158,7 +174,12 @@ const styles = StyleSheet.create({
     },
     badgeTxt: { color: "#FFF", fontSize: 10, fontWeight: "700" },
 
-    overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.2)", justifyContent: "flex-start", alignItems: "flex-end" },
+    overlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.2)",
+        justifyContent: "flex-start",
+        alignItems: "flex-end",
+    },
     dropdown: {
         marginTop: 60,
         marginRight: 12,

@@ -1,91 +1,101 @@
-/******************************************************************************
- *                                                                             *
- * Creation Date : 06/10/2025                                                  *
- *                                                                             *
- * Property : (c) This program, code or item is the Intellectual Property of   *
- * Evelyn Neves Barreto. Any use or copy of this code is prohibited without    *
- * the express written authorization of Evelyn. All rights reserved.           *
- *                                                                             *
- ******************************************************************************/
-
 import { db } from "@/src/modules/shared/infrastructure/firebase";
 import { auth } from "@/src/modules/shared/infrastructure/firebase/firebaseConfig";
-import { addDoc, collection, deleteDoc, doc, getDocs, updateDoc } from "firebase/firestore";
+import {
+    collection,
+    deleteDoc,
+    doc,
+    getDoc,
+    getDocs,
+    orderBy,
+    query,
+    serverTimestamp,
+    setDoc,
+    updateDoc,
+} from "firebase/firestore";
 import { Category } from "../../domain/entities/Category";
 import { Farm } from "../../domain/entities/Farm";
 
-function requireUser() {
+function getUserCollectionPath(path: string) {
     const user = auth.currentUser;
-    if (!user) throw new Error("Usuário não autenticado.");
-    return user;
+    if (!user) throw new Error("Usuário não autenticado");
+    return `users/${user.uid}/${path}`;
 }
 
-/** =================== FARMS =================== */
+export async function addFarm(farm: Omit<Farm, "id">): Promise<Farm> {
+    const colRef = collection(db, getUserCollectionPath("farms"));
+    const ref = doc(colRef);
+    const now = new Date().toISOString();
 
-export async function addFarm(farm: Omit<Farm, "id">): Promise<string> {
-    const user = requireUser();
-    const colRef = collection(db, `users/${user.uid}/farms`);
-    const ref = await addDoc(colRef, {
+    const payload = {
         ...farm,
-        lastUpdated: new Date().toISOString(),
-    });
-    return ref.id;
+        id: ref.id,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        createdAtISO: now,
+    };
+
+    await setDoc(ref, payload);
+
+    const snap = await getDoc(ref);
+    if (!snap.exists()) {
+        await new Promise((r) => setTimeout(r, 300));
+        const retrySnap = await getDoc(ref);
+        if (!retrySnap.exists()) throw new Error("Falha ao obter fazenda criada.");
+        return { id: retrySnap.id, ...(retrySnap.data() as Omit<Farm, "id">) };
+    }
+
+    return { id: snap.id, ...(snap.data() as Omit<Farm, "id">) };
 }
 
 export async function getFarms(): Promise<Farm[]> {
-    const user = requireUser();
-    const qs = await getDocs(collection(db, `users/${user.uid}/farms`));
+    const colRef = collection(db, getUserCollectionPath("farms"));
+    const q = query(colRef, orderBy("createdAt", "desc"));
+    const qs = await getDocs(q);
     return qs.docs.map((d) => ({
         id: d.id,
         ...(d.data() as Omit<Farm, "id">),
     }));
 }
 
-export async function updateFarm(id: string, data: Partial<Farm>): Promise<void> {
-    const user = requireUser();
-    if (!id) throw new Error("ID da fazenda inválido.");
-    const ref = doc(db, `users/${user.uid}/farms/${id}`);
-    await updateDoc(ref, { ...data, lastUpdated: new Date().toISOString() });
+export async function updateFarm(id: string, data: Partial<Farm>) {
+    const ref = doc(db, getUserCollectionPath(`farms/${id}`));
+    await updateDoc(ref, { ...data, updatedAt: serverTimestamp() });
 }
 
-export async function deleteFarm(id: string): Promise<void> {
-    const user = requireUser();
-    if (!id) throw new Error("ID da fazenda inválido.");
-    const ref = doc(db, `users/${user.uid}/farms/${id}`);
+export async function deleteFarm(id: string) {
+    const ref = doc(db, getUserCollectionPath(`farms/${id}`));
     await deleteDoc(ref);
 }
 
-/** =================== CATEGORIES =================== */
-
-export async function addCategory(category: Omit<Category, "id">): Promise<string> {
-    const user = requireUser();
-    const colRef = collection(db, `users/${user.uid}/categories`);
-    const ref = await addDoc(colRef, {
+export async function addCategory(category: Omit<Category, "id">): Promise<Category> {
+    const colRef = collection(db, getUserCollectionPath("categories"));
+    const ref = doc(colRef);
+    const payload = {
         ...category,
-        lastUpdated: new Date().toISOString(),
-    });
-    return ref.id;
+        id: ref.id,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+    };
+    await setDoc(ref, payload);
+    return { ...category, id: ref.id };
 }
 
 export async function getCategories(): Promise<Category[]> {
-    const user = requireUser();
-    const qs = await getDocs(collection(db, `users/${user.uid}/categories`));
+    const colRef = collection(db, getUserCollectionPath("categories"));
+    const q = query(colRef, orderBy("createdAt", "desc"));
+    const qs = await getDocs(q);
     return qs.docs.map((d) => ({
         id: d.id,
         ...(d.data() as Omit<Category, "id">),
     }));
 }
 
-export async function updateCategory(id: string, data: Partial<Category>): Promise<void> {
-    const user = requireUser();
-    if (!id) throw new Error("ID da categoria inválido.");
-    const ref = doc(db, `users/${user.uid}/categories/${id}`);
-    await updateDoc(ref, { ...data, lastUpdated: new Date().toISOString() });
+export async function updateCategory(id: string, data: Partial<Category>) {
+    const ref = doc(db, getUserCollectionPath(`categories/${id}`));
+    await updateDoc(ref, { ...data, updatedAt: serverTimestamp() });
 }
 
-export async function deleteCategory(id: string): Promise<void> {
-    const user = requireUser();
-    if (!id) throw new Error("ID da categoria inválido.");
-    const ref = doc(db, `users/${user.uid}/categories/${id}`);
+export async function deleteCategory(id: string) {
+    const ref = doc(db, getUserCollectionPath(`categories/${id}`));
     await deleteDoc(ref);
 }

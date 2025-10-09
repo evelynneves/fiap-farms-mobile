@@ -3,10 +3,6 @@ import { addItemInStorage } from "../../infrastructure/services/itemService";
 
 const norm = (s: string) => s.trim().toLowerCase();
 
-/**
- * Adiciona um item garantindo que não exista duplicado por (nome + fazenda).
- * O service calcula o status e gera o ID no Firestore.
- */
 export async function addItem(items: Item[], newItem: Omit<Item, "id" | "status">): Promise<Item[]> {
     const duplicate = items.some((i) => norm(i.name) === norm(newItem.name) && i.farm === newItem.farm);
     if (duplicate) {

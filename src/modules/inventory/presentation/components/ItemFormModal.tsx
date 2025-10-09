@@ -104,7 +104,6 @@ export function ItemFormModal({ isOpen, onClose, onSave, editingItem, categories
         setEntries((arr) => arr.map((en) => (en.id === pickerEntryId ? { ...en, date: iso } : en)));
     };
 
-    // ✅ Validação dos obrigatórios e numéricos
     const requiredFilled =
         form.name.trim().length > 0 &&
         form.category.trim().length > 0 &&

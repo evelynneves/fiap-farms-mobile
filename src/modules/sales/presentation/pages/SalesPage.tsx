@@ -1,41 +1,36 @@
-import {
-    addNotification,
-    getFreshNotificationsConfig,
-} from "@/src/modules/inventory/infrastructure/services/notificationService";
-import { calcTotalQuantity, calcTotalRevenue } from "@/src/modules/sales/application/usecases/calcTotals";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+
+import { Plus } from "lucide-react-native";
+
 import { Goal } from "@/src/modules/sales/domain/entities/Goal";
 import { Item } from "@/src/modules/sales/domain/entities/Item";
 import { Sale } from "@/src/modules/sales/domain/entities/Sale";
+
+import { calcTotalQuantity, calcTotalRevenue } from "@/src/modules/sales/application/usecases/calcTotals";
 import {
     addSaleToStorage,
     deleteSaleFromStorage,
+    getSalesFromStorage,
     updateSaleInStorage,
 } from "@/src/modules/sales/infrastructure/services/saleService";
+
 import { AlertMessage } from "@/src/modules/sales/presentation/components/AlertMessage";
 import { EmptyState } from "@/src/modules/sales/presentation/components/EmptyState";
 import { SaleFormModal } from "@/src/modules/sales/presentation/components/SaleFormModal";
 import { SalesList } from "@/src/modules/sales/presentation/components/SalesList";
 import { SummaryCards } from "@/src/modules/sales/presentation/components/SummaryCards";
-import type { Item as SharedItem } from "@/src/modules/shared/goal/domain/entities/Item";
-import type { Sale as SharedSale } from "@/src/modules/shared/goal/domain/entities/Sale";
-import { subscribeGoals, subscribeItems, subscribeSales } from "@/src/modules/shared/goal/infrastructure/goalService";
-import { Plus } from "lucide-react-native";
-import React, { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-
-type SaleWithGoalFlag = Sale & { hasRelatedGoal?: boolean };
-type NotifConfig = { stock: boolean; goals: boolean };
+import { getGoalsFromStorage, getItemsFromStorage } from "@/src/modules/shared/goal";
 
 export default function SalesScreen() {
     const [products, setProducts] = useState<Item[]>([]);
-    const [sales, setSales] = useState<SaleWithGoalFlag[]>([]);
+    const [sales, setSales] = useState<Sale[]>([]);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [goals, setGoals] = useState<Goal[]>([]);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingSale, setEditingSale] = useState<Sale | null>(null);
-
-    const notifCfgRef = useRef<NotifConfig>({ stock: true, goals: true });
 
     const totalRevenue = calcTotalRevenue(sales);
     const totalQty = calcTotalQuantity(sales);
@@ -43,77 +38,35 @@ export default function SalesScreen() {
     useEffect(() => {
         (async () => {
             try {
-                const cfg = await getFreshNotificationsConfig();
-                notifCfgRef.current = {
-                    stock: cfg?.stock ?? true,
-                    goals: cfg?.goals ?? true,
-                };
-            } catch {
-                notifCfgRef.current = { stock: true, goals: true };
+                setLoading(true);
+                const [items, salesData, goalsData] = await Promise.all([
+                    getItemsFromStorage(),
+                    getSalesFromStorage(),
+                    getGoalsFromStorage(),
+                ]);
+
+                const salesWithFlag = salesData.map((sale) => ({
+                    ...sale,
+                    hasRelatedGoal: goalsData.some((goal) => goal.productId === sale.productId),
+                }));
+
+                setProducts(items as unknown as Item[]);
+                setGoals(goalsData as unknown as Goal[]);
+                setSales(salesWithFlag);
+            } catch (err: any) {
+                setError(err.message ?? "Erro ao carregar vendas");
+            } finally {
+                setLoading(false);
             }
         })();
     }, []);
 
-    useEffect(() => {
-        const unsubGoals = subscribeGoals(setGoals);
-        return () => unsubGoals?.();
-    }, []);
-
-    useEffect(() => {
-        const unsubItems = subscribeItems((sharedItems: SharedItem[]) => {
-            const mapped = sharedItems.map((i) => ({
-                id: i.id,
-                name: i.name,
-                farmName: (i as any).farm ?? "",
-                quantity: i.quantity ?? 0,
-                unit: (i as any).unit ?? "un",
-                lastUpdated: i.lastUpdated ?? new Date().toISOString(),
-            })) as unknown as Item[];
-            setProducts(mapped);
-        });
-        return () => unsubItems?.();
-    }, []);
-
-    useEffect(() => {
-        const unsubSales = subscribeSales((sharedSales: SharedSale[]) => {
-            const mappedSales: SaleWithGoalFlag[] = sharedSales.map((sale) => ({
-                id: sale.id,
-                productId: sale.productId,
-                productName: sale.productName,
-                farmName: sale.farm ?? "",
-                quantity: sale.quantity,
-                salePrice: sale.salePrice,
-                totalValue: sale.totalValue,
-                date: sale.date,
-            }));
-            setSales(mappedSales);
-            setLoading(false);
-        });
-        return () => unsubSales?.();
-    }, []);
-
-    useEffect(() => {
-        setSales((prev) =>
-            prev.map((s) => ({
-                ...s,
-                hasRelatedGoal: goals.some((g) => g.productId === s.productId),
-            }))
-        );
-    }, [goals]);
-
     const handleSaveSale = async (sale: Sale, isEdit: boolean) => {
         try {
-            let persisted: SaleWithGoalFlag;
-
             if (isEdit) {
-                const updated = await updateSaleInStorage(sale.id, sale);
-                persisted = {
-                    ...updated,
-                    hasRelatedGoal: goals.some((g) => g.productId === updated.productId),
-                };
-                setSales((prev) => prev.map((s) => (s.id === sale.id ? persisted : s)));
+                await updateSaleInStorage(sale.id, sale);
             } else {
-                const added = await addSaleToStorage({
+                await addSaleToStorage({
                     productId: sale.productId,
                     productName: sale.productName,
                     farmName: sale.farmName,
@@ -121,44 +74,27 @@ export default function SalesScreen() {
                     salePrice: sale.salePrice,
                     date: sale.date,
                 });
-                persisted = {
-                    ...added,
-                    hasRelatedGoal: goals.some((g) => g.productId === added.productId),
-                };
-                setSales((prev) => [...prev, persisted]);
             }
 
-            const cfg = await getFreshNotificationsConfig();
+            const [salesData, itemsData, goalsData] = await Promise.all([
+                getSalesFromStorage(),
+                getItemsFromStorage(),
+                getGoalsFromStorage(),
+            ]);
 
-            if (cfg.goals) {
-                const relatedGoal = goals.find((g) => g.productId === persisted.productId);
+            const salesWithFlag = salesData.map((s) => ({
+                ...s,
+                hasRelatedGoal: goalsData.some((g) => g.productId === s.productId),
+            }));
 
-                if (relatedGoal) {
-                    const newProgress = relatedGoal.current + persisted.quantity;
-                    const isCompleted = newProgress >= relatedGoal.target;
-
-                    const updatedGoal = {
-                        ...relatedGoal,
-                        current: newProgress,
-                        status: isCompleted ? "completed" : "active",
-                        updatedAt: new Date().toISOString(),
-                    };
-                    await updateSaleInStorage(relatedGoal.id, updatedGoal as any);
-
-                    await addNotification({
-                        type: "success",
-                        category: "goals",
-                        title: isCompleted ? "Meta Atingida!" : "Venda vinculada à meta",
-                        message: isCompleted
-                            ? `${relatedGoal.title} foi concluída com sucesso (${newProgress}/${relatedGoal.target} ${relatedGoal.unit}).`
-                            : `A venda de ${persisted.productName} ajudou no progresso da meta "${relatedGoal.title}" (${newProgress}/${relatedGoal.target} ${relatedGoal.unit}).`,
-                    });
-                }
-            }
-
+            setSales(salesWithFlag);
+            setProducts(itemsData as unknown as Item[]);
+            setGoals(goalsData as unknown as Goal[]);
             setError("");
+            setIsModalOpen(false);
+            setEditingSale(null);
         } catch (e: any) {
-            setError(e?.message ?? "Erro ao salvar venda.");
+            setError(e.message ?? "Erro ao salvar venda");
         }
     };
 
@@ -167,14 +103,14 @@ export default function SalesScreen() {
             await deleteSaleFromStorage(id);
             setSales((prev) => prev.filter((s) => s.id !== id));
         } catch (e: any) {
-            setError(e?.message ?? "Erro ao excluir venda.");
+            setError(e.message ?? "Erro ao excluir venda");
         }
     };
 
     if (loading) {
         return (
             <View style={styles.loading}>
-                <ActivityIndicator size="large" color="#10B981" />
+                <ActivityIndicator size="large" color="#16A34A" />
             </View>
         );
     }
@@ -292,17 +228,8 @@ const styles = StyleSheet.create({
         elevation: 3,
         marginBottom: 10,
     },
-    primaryBtnTxt: {
-        color: "#FFF",
-        fontWeight: "700",
-        fontSize: 15,
-        letterSpacing: 0.3,
-    },
-    fullWidthBtn: {
-        width: "100%",
-        alignSelf: "center",
-        marginTop: 6,
-    },
+    primaryBtnTxt: { color: "#FFF", fontWeight: "700", fontSize: 15, letterSpacing: 0.3 },
+    fullWidthBtn: { width: "100%", alignSelf: "center", marginTop: 6 },
     emptyWrapper: {
         flex: 1,
         justifyContent: "center",

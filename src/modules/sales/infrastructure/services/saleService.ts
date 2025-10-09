@@ -22,9 +22,6 @@ interface ItemSale {
     totalValue: number;
 }
 
-/**
- * Cria uma venda em /users/{uid}/sales e atualiza o estoque do item em /users/{uid}/items de forma atômica.
- */
 export async function addSaleToStorage(sale: Omit<Sale, "id" | "totalValue">): Promise<Sale> {
     const user = auth.currentUser;
     if (!user) throw new Error("Usuário não autenticado.");
@@ -37,15 +34,18 @@ export async function addSaleToStorage(sale: Omit<Sale, "id" | "totalValue">): P
         if (!productSnap.exists()) throw new Error("Produto não encontrado.");
 
         const product = productSnap.data() as Item;
+
         if (sale.quantity > product.quantity) throw new Error("Quantidade vendida maior que o estoque disponível.");
 
         const totalValue = sale.quantity * sale.salePrice;
 
         const saleRef = doc(salesCol);
+
         tx.set(saleRef, {
             ...sale,
             totalValue,
             createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
         });
 
         const itemSale: ItemSale = {
@@ -59,30 +59,25 @@ export async function addSaleToStorage(sale: Omit<Sale, "id" | "totalValue">): P
         tx.update(productRef, {
             quantity: product.quantity - sale.quantity,
             sales: arrayUnion(itemSale),
-            lastUpdated: new Date().toISOString().split("T")[0],
+            lastUpdated: serverTimestamp(),
         });
 
         return { id: saleRef.id, ...sale, totalValue };
     });
 }
 
-/**
- * Lista todas as vendas do usuário autenticado (recalcula totalValue por segurança).
- */
 export async function getSalesFromStorage(): Promise<Sale[]> {
     const user = auth.currentUser;
     if (!user) throw new Error("Usuário não autenticado.");
 
     const qs = await getDocs(collection(db, `users/${user.uid}/sales`));
+
     return qs.docs.map((d) => {
         const data = d.data() as Omit<Sale, "id">;
         return { id: d.id, ...data, totalValue: data.quantity * data.salePrice };
     });
 }
 
-/**
- * Atualiza uma venda em /users/{uid}/sales/{id} e reflete a diferença no estoque do item em /users/{uid}/items/{productId}.
- */
 export async function updateSaleInStorage(id: string, sale: Omit<Sale, "id" | "totalValue">): Promise<Sale> {
     const user = auth.currentUser;
     if (!user) throw new Error("Usuário não autenticado.");
@@ -101,7 +96,6 @@ export async function updateSaleInStorage(id: string, sale: Omit<Sale, "id" | "t
 
         const product = productSnap.data() as Item;
         const totalValue = sale.quantity * sale.salePrice;
-
         const quantityDiff = sale.quantity - oldSale.quantity;
 
         tx.update(saleRef, {
@@ -133,16 +127,13 @@ export async function updateSaleInStorage(id: string, sale: Omit<Sale, "id" | "t
 
         tx.update(productRef, {
             sales: arrayUnion(newItemSale),
-            lastUpdated: new Date().toISOString().split("T")[0],
+            lastUpdated: serverTimestamp(),
         });
 
         return { id, ...sale, totalValue };
     });
 }
 
-/**
- * Exclui uma venda e devolve a quantidade ao estoque do item (ambos em /users/{uid}/...).
- */
 export async function deleteSaleFromStorage(id: string): Promise<void> {
     const user = auth.currentUser;
     if (!user) throw new Error("Usuário não autenticado.");
@@ -173,10 +164,11 @@ export async function deleteSaleFromStorage(id: string): Promise<void> {
         };
 
         tx.delete(saleRef);
+
         tx.update(productRef, {
             quantity: product.quantity + sale.quantity,
             sales: arrayRemove(itemSale),
-            lastUpdated: new Date().toISOString().split("T")[0],
+            lastUpdated: serverTimestamp(),
         });
     });
 }
